@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Stuff inside analysis folder and subfolders
+analysis/*
+
+# Output stuff
+output/*.png
+output/*.csv
+output/*.MCA
+
+tests/*.png
+tests/testdata/*.png
+
+plots/*.png
+plots/*.pdf
+
+# The temp folder created by the GUI
+temp
+
+# Forgotten text files
+*.txt
+
+# Drawio stuff
+docs/.$*
+ressources/.$*
+
+access.txt

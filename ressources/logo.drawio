@@ -1,0 +1,31 @@
+<mxfile host="Electron" modified="2024-05-24T14:23:25.208Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.0.4 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="yvNLX92_sllRzsw_LW0l" version="24.0.4" type="device">
+  <diagram name="Page-1" id="P4ZZlCwfQQSLwyeKFaG8">
+    <mxGraphModel dx="702" dy="721" grid="1" gridSize="2" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="NuE-JEQmyExVt_BTxYll-1" value="" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=4;fillColor=#FFE599;" vertex="1" parent="1">
+          <mxGeometry x="348" y="268" width="120" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="NuE-JEQmyExVt_BTxYll-2" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=4;fillColor=#FF8000;" vertex="1" parent="1">
+          <mxGeometry x="353" y="242" width="110" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="NuE-JEQmyExVt_BTxYll-9" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="368" y="283.8822717360364" width="82.46586360649206" height="118.11772826396361" as="geometry" />
+        </mxCell>
+        <mxCell id="NuE-JEQmyExVt_BTxYll-3" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeWidth=2;fillColor=#FF3333;strokeColor=#000000;" vertex="1" parent="NuE-JEQmyExVt_BTxYll-9">
+          <mxGeometry y="24.117728263963613" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="NuE-JEQmyExVt_BTxYll-4" value="" style="triangle;whiteSpace=wrap;html=1;rotation=90;fillColor=#994C00;strokeWidth=2;" vertex="1" parent="NuE-JEQmyExVt_BTxYll-9">
+          <mxGeometry x="31.620000000000005" y="13.747728263963609" width="16.75" height="8.75" as="geometry" />
+        </mxCell>
+        <mxCell id="NuE-JEQmyExVt_BTxYll-6" value="" style="ellipse;whiteSpace=wrap;html=1;rotation=-30;fillColor=#00CC00;strokeWidth=2;" vertex="1" parent="NuE-JEQmyExVt_BTxYll-9">
+          <mxGeometry x="37.98999999999995" y="9.08772826396364" width="42.01" height="21.12" as="geometry" />
+        </mxCell>
+        <mxCell id="NuE-JEQmyExVt_BTxYll-7" value="$$\mu$$&lt;br&gt;" style="text;align=center;verticalAlign=middle;rounded=0;fontSize=60;fontStyle=0;fontColor=#007FFF;spacing=0;html=1;whiteSpace=wrap;labelBorderColor=none;labelBackgroundColor=none;fontFamily=Helvetica;" vertex="1" parent="NuE-JEQmyExVt_BTxYll-9">
+          <mxGeometry x="10" y="62.11772826396361" width="60" height="56" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
