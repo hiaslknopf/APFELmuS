@@ -1,4 +1,4 @@
-### MicroDosimetry Package
+### APFELmuS - A Python Framework For the EvaLuation of Microdosimetric Spectra
 This is an analysis toolkit for evaluating microdosimetric data (pulse-height-spectra & Geant4/GATE simulation data). It can be either used like a Python package by importing its functions into your own code or with some GUIs.
 
 Currently, only ORTEC MAESTRO .Spe files and simulation ROOT files are supported, but other read functions can be easily implemented. This is a work in progress and in its early stages. Theres still a lot missing, its a complete mess and very unstable ...
