@@ -112,7 +112,7 @@ class MicroDosimetry():
         This can be used to change several attributes at once or to add initial information to a ROOT data.
         
         Attributes:
-            particle: Particle type (proton, carbon, alpha)
+            particle: Particle type (proton, carbon, helium)
             detector: Detector type (silicon, diamond, sic, TEPC)
             mean_chord_length: Mean chord length (in um)
             max_chord_length: Max chord length (in um)
@@ -400,7 +400,7 @@ class Measurement():
         else:
             raise NotImplementedError(f'In {file}: Gain {gain} is not a viable option.')
         
-        if particle in ['proton', 'carbon', 'alpha']:
+        if particle in ['proton', 'carbon', 'helium']:
             self._particle = particle
         else:
             raise NotImplementedError(f'In {file}: Particle type {particle} is not a viable option.')

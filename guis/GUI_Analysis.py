@@ -124,7 +124,7 @@ class GUI_Analysis:
         ttk.Label(self.frame_file_cal, text="Particle:").grid(row=12, column=0, sticky=tk.W)
         self.particle_var = tk.StringVar()
         self.particle_var.set("proton")
-        self.material_dropdown = ttk.OptionMenu(self.frame_file_cal, self.particle_var, "proton", "proton", "carbon", "alpha")
+        self.material_dropdown = ttk.OptionMenu(self.frame_file_cal, self.particle_var, "proton", "proton", "carbon", "helium")
         self.material_dropdown.grid(row=12, column=1, sticky=tk.W)      
 
     def create_plot_selection_widgets(self):

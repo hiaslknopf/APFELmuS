@@ -202,7 +202,7 @@ def get_stopping_power(measurement, chord_length='mean', database='SRIM', precis
             chord_length: Chord length of the given arrangement in µm
             database: Available options 'ICRU', 'SRIM'
             precision (optional): Precision of the interpolation in keV/µm
-            particle (optional): Particle to be used for the calibration (proton, carbon, alpha)
+            particle (optional): Particle to be used for the calibration (proton, carbon, helium)
             material (optional): Material to be used for the calibration (silicon, diamond, sic, water)
             plot (optional): Show a plot of the interpolation
 
@@ -250,10 +250,10 @@ def get_stopping_power(measurement, chord_length='mean', database='SRIM', precis
             nucleons = 1
         elif particle == 'carbon':
             nucleons = 12
-        elif particle == 'alpha':
+        elif particle == 'helium':
             nucleons = 4
         else:
-            raise ValueError(f"Calibration not implemented for {particle}. Current options: proton, carbon, alpha")
+            raise ValueError(f"Calibration not implemented for {particle}. Current options: proton, carbon, helium")
         
         if not os.path.exists(f"{ressources_path}/{database}_{particle}_{material}.csv"):
             raise ValueError(f"Stopping power table for {particle} in {material} not found in {ressources_path}")

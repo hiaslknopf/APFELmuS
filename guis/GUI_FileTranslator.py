@@ -64,7 +64,7 @@ class GUI_FileTranslator:
         ttk.Label(self.file_frame, text="Particle:").grid(row=3, column=2, sticky=tk.E)
         self.particle_var = tk.StringVar()
         self.particle_var.set("proton")
-        self.material_dropdown = ttk.OptionMenu(self.file_frame, self.particle_var, "proton", "proton", "carbon", "alpha")
+        self.material_dropdown = ttk.OptionMenu(self.file_frame, self.particle_var, "proton", "proton", "carbon", "helium")
         self.material_dropdown.grid(row=3, column=3, sticky=tk.W)
 
         # Empty row

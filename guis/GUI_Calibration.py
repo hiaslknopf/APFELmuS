@@ -103,7 +103,7 @@ class GUI_Calibration:
         ttk.Label(self.file_frame, text="Particle:").grid(row=4, column=0, sticky=tk.W)
         self.particle_var = tk.StringVar()
         self.particle_var.set("proton")
-        self.material_dropdown = ttk.OptionMenu(self.file_frame, self.particle_var, "proton", "proton", "carbon", "alpha")
+        self.material_dropdown = ttk.OptionMenu(self.file_frame, self.particle_var, "proton", "proton", "carbon", "helium")
         self.material_dropdown.grid(row=4, column=1, sticky=tk.W)
 
         # Entry for chord length
