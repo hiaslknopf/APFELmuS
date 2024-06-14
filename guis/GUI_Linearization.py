@@ -59,7 +59,7 @@ class GUI_Linearization:
         self.checkbutton_use_calibration.grid(row=1, column=0, sticky=tk.W)
 
         #Browse for calibration file
-        ttk.Label(self.file_frame, text="Pulser Cal (*.csv):", state='disabled').grid(row=2, column=0, sticky=tk.W)
+        self.entry_cal_label = ttk.Label(self.file_frame, text="Pulser Cal (*.csv):", state='disabled').grid(row=2, column=0, sticky=tk.W)
         self.entry_cal_path = ttk.Entry(self.file_frame, state='disabled')
         self.entry_cal_path.grid(row=2, column=1, sticky=tk.W)
         self.browse_cal_path = ttk.Button(self.file_frame, text="Browse", command=self.browse_pulser_cal, state='disabled')
@@ -77,18 +77,22 @@ class GUI_Linearization:
         self.entry_mV_list = tk.Text(self.specs_frame, height=5, width=30)
         self.entry_mV_list.grid(row=0, column=1, sticky=tk.W)
 
+        # Button to load mV list from file
+        self.browse_mV_list_button = ttk.Button(self.specs_frame, text="Load from file", command=self.browse_mV_list)
+        self.browse_mV_list_button.grid(row=2, column=0, sticky=tk.W)
+        
         # Empty row
-        ttk.Label(self.specs_frame, text="").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(self.specs_frame, text="").grid(row=3, column=0, sticky=tk.W)
 
         # Slider and entry for cutoff
-        ttk.Label(self.specs_frame, text="Spectrum cutoff:").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(self.specs_frame, text="Spectrum cutoff:").grid(row=4, column=0, sticky=tk.W)
 
         self.slider_var = tk.IntVar()
         self.slider_cutoff = ttk.Scale(self.specs_frame, from_=0, to=250, orient=tk.HORIZONTAL, variable=self.slider_var)
-        self.slider_cutoff.grid(row=3, column=0, sticky=tk.W+tk.E)
+        self.slider_cutoff.grid(row=4, column=0, sticky=tk.W+tk.E)
         
         self.entry_cutoff = ttk.Entry(self.specs_frame, width=5, textvariable=self.slider_var)
-        self.entry_cutoff.grid(row=3, column=1, sticky=tk.W)
+        self.entry_cutoff.grid(row=4, column=1, sticky=tk.W)
 
         self.slider_cutoff.bind("<ButtonRelease-1>", self.on_slider_cutoff_change)
         self.entry_cutoff.bind("<Return>", self.on_entry_cutoff_change)
@@ -280,13 +284,14 @@ class GUI_Linearization:
         
         # Browse for output path
         script_directory = os.path.dirname(os.path.abspath(__file__))
-        output_path = filedialog.askdirectory(initialdir=script_directory, title="Select output directory")
-        if output_path == '':
-            return
+        output_file_path = filedialog.asksaveasfilename(initialdir=script_directory, title="Select output file",
+                                                        defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+        if output_file_path == '':
+            print("No output path selected")
         
         #Write the calibration file
-        pd.DataFrame.to_csv(self.linearization_df, f'{output_path}.csv', sep=',', index=False)
-        print(f'Wrote linearization file: {output_path}')
+        self.linearization_df.to_csv(f'{output_file_path}.csv', sep=',', index=False)
+        print(f'Wrote linearization file: {output_file_path}')
 
     def reset_GUI(self):
         # Reset buttons
@@ -297,6 +302,8 @@ class GUI_Linearization:
 
         # Reset entry fields
         self.entry_pulser_file_path.delete(0, tk.END)
+        self.entry_pulser_file_path.config(state='normal')
+        self.browse_pulser_file_path.config(state='normal')
         self.entry_cal_path.delete(0, tk.END)
         self.entry_cal_path.config(state='disabled')
         self.browse_cal_path.config(state='disabled')
@@ -310,6 +317,38 @@ class GUI_Linearization:
         
         # Add initial tab
         self.add_initial_tab()
+
+    def browse_mV_list(self):
+        file_path = filedialog.askopenfilename(initialdir=os.path.dirname(os.path.abspath(__file__)), filetypes=[("Text files", "*.txt")])
+        self.get_voltages_from_file(file_path)
+
+    def get_voltages_from_file(self, file_path):
+        """ Make sure the format matches the Pulser GUI output """
+
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+
+            for i, line in enumerate(lines):
+                if 'Voltage' in line:
+                    voltage_line = lines[i+1]
+                    print(voltage_line)
+                    break
+                else:
+                    voltage_line = ''
+            
+        if voltage_line == '':
+            messagebox.showwarning("Warning", "No valid voltage sequence found")
+            return
+
+        # Remove the brackets and the newline character
+        voltage_line = voltage_line.replace('[', '').replace(']', '').replace('\n', '')
+        print(voltage_line)
+        
+        # Write the voltages into the entry field
+        if self.entry_mV_list.get("1.0", tk.END) != '':
+            self.entry_mV_list.delete("1.0", tk.END)
+        
+        self.entry_mV_list.insert("1.0", voltage_line)
 
 root = tk.Tk()
 app = GUI_Linearization(root)
