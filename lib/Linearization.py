@@ -73,11 +73,11 @@ def _plot_linearization(channel, mV, lin_curve_channel, lin_curve_mV, method, nu
     if ax is None:
         fig, ax = plt.subplots()
 
-    ax.plot(channel, mV, 'x', label='Measured MCA Peaks')
+    ax.plot(channel, mV, 'x', label='Measured Peak Heights')
     ax.plot(lin_curve_channel, lin_curve_mV, 'r--', label=f'{method} fit')
 
     ax.set_xlabel('Channel')
-    ax.set_ylabel('Measured [mV]')
+    ax.set_ylabel('Test input voltage [mV]')
     ax.grid(which='both')
     ax.set_xlim(0, num_channels)
     ax.set_ylim(0, 1.1 * max(mV))

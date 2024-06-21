@@ -1,6 +1,7 @@
 import sys
 
-projekt_dir = 'C:/Users/knopf/Desktop/microdosimetry'
+# Whereever you stored the repository project folder
+projekt_dir = 'C:/Users/knopf/Desktop/APFELmuS'
 if projekt_dir not in sys.path:
     sys.path.append(projekt_dir)
 

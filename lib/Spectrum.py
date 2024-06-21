@@ -370,6 +370,8 @@ def merge_spectra(measurements):
     
     Args:
         measurements: The list of spectra to be merged
+    Returns:
+        merged_spectrum: The merged spectrum (Measurement object)
     """
 
     #---------Check if data matches-----------
@@ -565,6 +567,60 @@ def retrieve_original_spectrum(measurement):
         measurement.data[measurement.y_axis] = measurement.original_data[measurement.y_axis].tolist()
         measurement.data['mV'] = measurement.original_data['mV']
    
+def add_spectra(measurements_list):
+    """ Add the counts of an arbitrary number of spectra
+        This can be used to obtain a more distinct particle edge for the calibration procedure
+        
+        Args:
+            measurements_list: List of spectra to be added
+    """
+
+    #Check if all spectra have the same length
+    if all(len(measurements_list[i].data) == len(measurements_list[0].data) for i in range(1,len(measurements_list))):
+        print('All spectra have the same length')
+    else:
+        raise ValueError('The spectra have to have the same length')
+
+    #Check if all spectra have the same x-axis
+    if all(measurements_list[i].x_axis == measurements_list[0].x_axis for i in range(1,len(measurements_list))):
+        print('All spectra have the same x-axis')
+    else:
+        raise ValueError('The spectra have to have the same x-axis')
+
+    #Check if all spectra have the same y-axis
+    if all(measurements_list[i].y_axis == measurements_list[0].y_axis for i in range(1,len(measurements_list))):
+        print('All spectra have the same y-axis')
+    else:
+        raise ValueError('The spectra have to have the same y-axis')
+    
+    #Add the spectra
+    x = measurements_list[0].data[measurements_list[0].x_axis].to_numpy()
+    tot_sum = np.zeros(len(x), dtype=float)
+
+    for i in range(len(measurements_list)):
+        data = pd.to_numeric(measurements_list[0].data[measurements_list[0].y_axis], errors='coerce')
+        tot_sum += data
+
+    #Create new Dataframe
+    sum_df = pd.DataFrame()
+    sum_df[measurements_list[0].x_axis] = x
+    sum_df[measurements_list[0].y_axis] = tot_sum
+
+    #Create new measurement object
+    sum_spectrum = Measurement()
+    sum_spectrum._data = sum_df
+
+    sum_spectrum._x_axis = measurements_list[0].x_axis
+    sum_spectrum._y_axis = measurements_list[0].y_axis
+    sum_spectrum._num_channels = measurements_list[0].num_channels
+    sum_spectrum._date = measurements_list[0].date
+    sum_spectrum._detector = measurements_list[0].detector
+    sum_spectrum._gain = measurements_list[0].gain
+
+    print(f'Spectra have been added')
+
+    return sum_spectrum
+
 def get_LET_distribution(measurement, chord_length_dist, LET_spec='pdf'):
     """ Calculate an LET distribution from a calibrated f(E) pdf
     Following an algorithm according to Kellerer 1972, Phys.Med.Biol., 17, NO.2, 232-240

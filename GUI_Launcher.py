@@ -37,7 +37,7 @@ button_gui1.pack(pady=5)
 button_gui2 = tk.Button(root, text="Edge Calibration\n(Get scaling factor or Edge position)", command=lambda: launch_gui('guis/GUI_Calibration.py'), **button_style)
 button_gui2.pack(pady=5)
 
-button_gui3 = tk.Button(root, text="Create Calibration File\n(From a pulse .Spe file)", command=lambda: launch_gui('guis/GUI_Linearization.py'), **button_style)
+button_gui3 = tk.Button(root, text="Create Linearization File\n(From a pulser Spectrum)", command=lambda: launch_gui('guis/GUI_Linearization.py'), **button_style)
 button_gui3.pack(pady=5)
 
 button_gui4 = tk.Button(root, text="Attach Linearization\n(To a MAESTRO .Spe file)", command=lambda: launch_gui('guis/GUI_FileTranslator.py'), **button_style)
