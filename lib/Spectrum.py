@@ -597,14 +597,22 @@ def add_spectra(measurements_list):
     x = measurements_list[0].data[measurements_list[0].x_axis].to_numpy()
     tot_sum = np.zeros(len(x), dtype=float)
 
+    # Keep mV axis if it exists
+    if 'mV' in measurements_list[0].data.columns:
+        mV = measurements_list[0].data['mV'].to_numpy()
+
     for i in range(len(measurements_list)):
-        data = pd.to_numeric(measurements_list[0].data[measurements_list[0].y_axis], errors='coerce')
+        print(f'Adding spectrum {i+1} of {len(measurements_list)}')
+        data = pd.to_numeric(measurements_list[i].data[measurements_list[i].y_axis], errors='coerce')
         tot_sum += data
 
     #Create new Dataframe
     sum_df = pd.DataFrame()
     sum_df[measurements_list[0].x_axis] = x
     sum_df[measurements_list[0].y_axis] = tot_sum
+
+    if 'mV' in measurements_list[0].data.columns:
+        sum_df['mV'] = mV
 
     #Create new measurement object
     sum_spectrum = Measurement()
@@ -616,6 +624,7 @@ def add_spectra(measurements_list):
     sum_spectrum._date = measurements_list[0].date
     sum_spectrum._detector = measurements_list[0].detector
     sum_spectrum._gain = measurements_list[0].gain
+    sum_spectrum._particle = measurements_list[0].particle
 
     print(f'Spectra have been added')
 

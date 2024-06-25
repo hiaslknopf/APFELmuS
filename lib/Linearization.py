@@ -128,7 +128,7 @@ def _read_pulser(filename, pulse_mV_list, testplot=False, ax=None):
         label = 'Interpolated values\nfrom measurement'
 
         # Interpolate for actual values in pulse_mV_list - Uncertainties are set to 0
-        pulser_interp = interpolate.interp1d(pulser_df['mV_goal'], pulser_df['mV_measured'], kind='linear')
+        pulser_interp = interpolate.interp1d(pulser_df['mV_goal'], pulser_df['mV_measured'], kind='linear', bounds_error=False, fill_value='extrapolate')
         pulser_df = pd.DataFrame({'mV_goal': pulse_mV_list, 'mV_measured': pulser_interp(pulse_mV_list), 'sigma': 0})
     
     # Remove any values that are not in pulse_mV_list

@@ -41,7 +41,7 @@ class MicroDosimetry():
             folderpath: Relative path of the folder to be analysed
         """
         folderpath = os.path.normpath(folderpath)
-        files = glob('{}/*.*'.format(folderpath))
+        files = glob('{}/*'.format(folderpath))
 
         # Remove all but .MCA, .root and .csv files
         files = [file for file in files if file.endswith('.MCA') or file.endswith('.root') or file.endswith('.csv')]
