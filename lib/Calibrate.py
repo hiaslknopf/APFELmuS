@@ -108,7 +108,10 @@ def _plot_stopping_power(dict, ax=None):
     ax.axvline(range_lower, color='orange', linestyle='--', label='Particle Track\nImparting Highest Energy')
     ax.fill_betweenx(np.linspace(-1,5000), range_lower, range_upper, color='orange', alpha=0.1)
 
-    ax.set_xlim(min(table['range']), max(table['range']) * 1.1)
+    if min(table['range']) < 1e-2:
+        ax.set_xlim(1e-2, max(table['range']) * 1.1)
+    else:
+        ax.set_xlim(min(table['range']), max(table['range']) * 1.1)
     ax.set_ylim(0, max(table['dE/dx']) * 1.1)
     ax.set_xscale('log')	
     ax.set_title(f'{database} Stopping Power for {particle} in {material}')
@@ -274,7 +277,7 @@ def get_stopping_power(measurement, chord_length='mean', database='SRIM', precis
             lower = range_values[bisect_left(array, value) - 1]
             closest_ind = table.index[table['range'] == lower].tolist()[0]
 
-            if ran < range_values[0]:
+            if ran <= range_values[0]:
                 closest_ind = 0
             
             closest_range = table.iloc[closest_ind]['range']

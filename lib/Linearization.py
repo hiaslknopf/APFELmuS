@@ -19,6 +19,9 @@ from lib import FileTranslator
 Necessary inpus are a Pulser calibration (mV goal vs mV measured) and 1 or more MCA linearization spectra (Gaussian peaks for different mV values).
 """
 
+# Include whereever this script is located
+ressources_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/ressources'
+
 def __gaussian(x, amplitude, mean, stddev):
     return amplitude * np.exp(-((x - mean) / stddev) ** 2 / 2)
 
@@ -219,7 +222,8 @@ def _fit_linearization(channel, mV, num_channels, method):
         
     return np.linspace(1, num_channels, num_channels), y_fit
 
-def get_linearization(name, output_path, pulse_file, pulse_mV_list, spectrum_file1, spectrum_file2=None, spectrum_file3=None, method='linear', testplot=False, cutoff=False):
+def get_linearization(name, output_path, pulse_mV_list, spectrum_file1, spectrum_file2=None, spectrum_file3=None,
+                      pulser_calibration = f'{ressources_path}/1to1_response.csv', method='linear', testplot=False, cutoff=False):
     """ Get a calibration file (csv) in 4 steps
 
     - Read the pulser and spectrum file
@@ -230,7 +234,7 @@ def get_linearization(name, output_path, pulse_file, pulse_mV_list, spectrum_fil
     Args:
         name: The name of the calibration file
         output_path: The path to save the plots
-        pulse_file: The pulser file to be read
+        pulser_calibration: Calibration file of the pulser used (default: 1to1_response.csv)
         spectrum_file<n>: The spectrum file(s) to be read (max 3)
         method: The method for the linearization curve fit (linear, piecewise)
         testplot: If True, plots are generated and shown for each step
@@ -238,8 +242,8 @@ def get_linearization(name, output_path, pulse_file, pulse_mV_list, spectrum_fil
     """
 
     #Read the pulser file
-    pulser_df = _read_pulser(pulse_file, pulse_mV_list, testplot)
-    print(f'Read Pulser calibration: {pulse_file}\n')
+    pulser_df = _read_pulser(pulser_calibration, pulse_mV_list, testplot)
+    print(f'Read Pulser calibration: {pulser_calibration}\n')
 
     #Read the spectrum file(s)
     spectra_list = []

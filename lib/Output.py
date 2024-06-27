@@ -196,7 +196,7 @@ def plot_single(measurement, name=False, output_path=False,
         print(f'"{name}".png saved to "{output_path}"')
 
 def plot_campaign(campaign, name=False, output_path=False, xlim=[1, 1000],
-                  step=False, scale='log', show_plot=True, interactive=True):
+                  step=False, scale='log', skip_noise = 50, show_plot=True, interactive=True):
     """ View and save multiple spectra in one plot
     
     Args:
@@ -205,6 +205,7 @@ def plot_campaign(campaign, name=False, output_path=False, xlim=[1, 1000],
         output_path: For the figure to be saved (optional)
         step: Use step plot instead of line plot (optional, default=False)
         scale: Scaling of x-axis (optional: 'lin', default: 'log')
+        skip_noise: Skip initial tail of the spectrum for finding the optimal ymax for the plot (optional, default=50)
         show_plot: Immediately show test plot (optional, default=True)
         interactive: Enable interactive plot control (Turn on and off lines) (optional, default=True)
     """
@@ -242,7 +243,7 @@ def plot_campaign(campaign, name=False, output_path=False, xlim=[1, 1000],
         
         lines.append(line)
 
-        ymaxnew = max(y)
+        ymaxnew = max(y[skip_noise:]) # To skip initial tail
         if ymaxnew > ymax:
             ymax = ymaxnew
 
@@ -261,7 +262,7 @@ def plot_campaign(campaign, name=False, output_path=False, xlim=[1, 1000],
     ax.set_ylabel(labels_dict['y_labels'][campaign.measurements[meas_names[0]]._y_axis])
     ax.set_title(f"{type_of_plot}: {name}")
 
-    legend = plt.legend(loc='upper left')
+    legend = plt.legend(loc='upper right')
     plt.tight_layout()
 
     if interactive:
