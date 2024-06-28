@@ -6,7 +6,7 @@ if projekt_dir not in sys.path:
     sys.path.append(projekt_dir)
 
 from MicroDosimetry import MicroDosimetry
-from lib import Calibrate, Spectrum, Output
+from lib import Calibrate, Spectrum, Output, Advanced
 
 """ Test the LET analysis (after Kellerer) """
 
@@ -37,5 +37,5 @@ if plot:
 #-----------------------------------------------------
 
 #And have a look at the LET distribution
-Spectrum.get_LET_distribution(campaign1.measurements[file], chord_len_dist)
+Advanced.get_LET_distribution(campaign1.measurements[file], chord_len_dist)
 Output.plot_single(campaign1.measurements[file], 'LET distribution (Kellerer)')

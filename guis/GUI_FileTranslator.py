@@ -86,7 +86,7 @@ class GUI_FileTranslator:
         
         info_dict = {'DETECTOR': self.detector_var.get(), 'GAIN': 'None', 'PARTICLE': self.particle_var.get()}
 
-        # Popup window for output path
+        # Error message if no files selected
         if self.entry_file_path.get() == "" or self.entry_linearization_path.get() == "":
             messagebox.showerror("Error", "Please select a file and a linearization file.")
 
@@ -120,7 +120,7 @@ class GUI_FileTranslator:
                 messagebox.showerror("Error", f"An error occurred: {e}")
                 return
         # Show success message (if no error occurred)
-        messagebox.showinfo("Success", f"File translated successfully.\n\nOutput file: {output_file_path}")
+        messagebox.showinfo("Success", f"File(s) translated successfully.\n\nOutput file: {output_file_path}")
 
     def reset(self):
         self.entry_file_path.delete(0, tk.END)
@@ -130,13 +130,14 @@ class GUI_FileTranslator:
     
     def browse_spe_file(self):
         script_directory = os.path.dirname(os.path.abspath(__file__))
-        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("MAESTRO files", "*.Spe")], multiple=True)
+        # Creating a list from the tuple maybe solves the curly brackets issue?
+        file_path = list(filedialog.askopenfilename(initialdir=script_directory, filetypes=[("MAESTRO files", "*.Spe")], multiple=True))
         self.entry_file_path.delete(0, tk.END)
         self.entry_file_path.insert(0, file_path)
     
     def browse_linearization_file(self):
         script_directory = os.path.dirname(os.path.abspath(__file__))
-        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("Linearization files", "*.csv")])
+        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("Linearization files", "*.csv")], multiple=False)
         self.entry_linearization_path.delete(0, tk.END)
         self.entry_linearization_path.insert(0, file_path)
 

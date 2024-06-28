@@ -290,7 +290,7 @@ class GUI_Linearization:
             print("No output path selected")
         
         #Write the calibration file
-        self.linearization_df.to_csv(f'{output_file_path}.csv', sep=',', index=False)
+        self.linearization_df.to_csv(f'{output_file_path}', sep=',', index=False)
         print(f'Wrote linearization file: {output_file_path}')
 
     def reset_GUI(self):

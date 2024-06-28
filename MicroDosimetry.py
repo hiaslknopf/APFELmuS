@@ -21,14 +21,18 @@ class MicroDosimetry():
         self.measurements = {} #Dict for filenames + data in analysis folder
 
     def get_files_with_format(self, folderpath):
-        """ Console printout of folder content """
+        """ Console printout of the folder content
+            Only for MCA, ROOT and uDos files containing linearized spectrum or microdosimetric data
 
-        #TODO: Hübscherer Output
+        Args:
+            folderpath: Relative path of the folder to be analysed        
+        """
 
         folderpath = os.path.normpath(folderpath)
         files = glob('{}/*.*'.format(folderpath))
-        files = [file.split(os.path.sep)[-1] for file in files]
+        files = [file.split(os.path.sep)[-1] for file in files if file.endswith('.MCA') or file.endswith('.root') or file.endswith('.csv')]
 
+        print(f'\nFolder content of {folderpath}:')
         for i, file in enumerate(files):
             print(i+1, ':\t', file)   
         
@@ -36,6 +40,8 @@ class MicroDosimetry():
 
     def read_folder(self, folderpath):
         """ Read in a whole folder of measurement files
+            This only works for MCA, ROOT and uDos files containing linearized spectrum or microdosimetric data
+            Not for the raw data files (e.g. .Spe, .txt) -> Attach a linearization to those first with Linearization.get_linearization()
 
         Args:
             folderpath: Relative path of the folder to be analysed
@@ -43,7 +49,7 @@ class MicroDosimetry():
         folderpath = os.path.normpath(folderpath)
         files = glob('{}/*'.format(folderpath))
 
-        # Remove all but .MCA, .root and .csv files
+        # Only .MCA, .root and .csv files (linearized microdosimetric data)
         files = [file for file in files if file.endswith('.MCA') or file.endswith('.root') or file.endswith('.csv')]
 
         for file in files:
@@ -109,7 +115,7 @@ class MicroDosimetry():
 
     def attach_info(self, measurement, info_dict):
         """ Attach information to a measurement object.
-        This can be used to change several attributes at once or to add initial information to a ROOT data.
+        This can be used to change several attributes at once or to add initial information to simulation data.
         
         Attributes:
             particle: Particle type (proton, carbon, helium)
@@ -130,20 +136,20 @@ class MicroDosimetry():
             Measurement.attach_mca_info(self, measurement, info_dict)
 
 class Measurement():
-    """ Actual analysis class. One instance per file in analysis folder aka one entry in measurement dict """
+    """ Actual analysis class. One instance per file in analysis folder aka one entry in measurement dict aka a single spectrum """
 
     def __init__(self, num_channels=0, date = datetime.now(), detector=None, gain=None) -> None: 
         """ Set up a measurement object containing all info for a given spectrum """
 
         #General information
         self._name: str = ''
-        self._num_channels:int = num_channels
         self._date: datetime = date
         self._particle: str = ''
         self._detector: str = detector
         self._gain: str = gain
 
         #Data information
+        self._num_channels:int = num_channels
         self._x_axis: str = ''
         self._y_axis: str = ''
         

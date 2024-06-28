@@ -66,9 +66,9 @@ def _plot_edge_calibration(dict, ax=None):
     # Unfortunately this is not quite working out in the plot bc of rounding errors
     #ax2.step(channel_axis, weighted_pdf, color='green', label='Spectrum')
 
-    ax.axvline(hFlex, color='purple', linestyle='--', label=label_hFlex)
-    ax.axvline(hDD, color='purple', linestyle='--', label=label_hDD)
-    ax.axvline(hTC, color='purple', linestyle='--', label=label_hTC)
+    ax.axvline(hFlex, color='darkviolet', linestyle='--', label=label_hFlex)
+    ax.axvline(hDD, color='deeppink', linestyle='--', label=label_hDD)
+    ax.axvline(hTC, color='magenta', linestyle='--', label=label_hTC)
 
     ax.fill_between(h[fit_bounds[0]:fit_bounds[1]], [-1e3]*len(h[fit_bounds[0]:fit_bounds[1]]), [1e3]*len(h[fit_bounds[0]:fit_bounds[1]]), color='orange', alpha=0.1, label=label_bounds)
     ax.axvline(h[fit_bounds[0]], color='orange', linestyle='--')

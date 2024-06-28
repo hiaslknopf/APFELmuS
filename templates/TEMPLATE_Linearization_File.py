@@ -8,7 +8,7 @@ if projekt_dir not in sys.path:
 from lib import Linearization
 import numpy as np
 
-""" This is a template demonstrating the generation of a calibraiton file from pulser measurements (Channel vs mV). """
+""" This is a template demonstrating the generation of a linarization file from pulser measurements (Channel vs mV). """
 
 #----------------------------------------------------
 
@@ -24,4 +24,7 @@ output_file_path = 'output'
 
 # This is it! The cutoff may be necessary to avoid fitting the initial noise peak (See testplot)
 # At the moment: Point to point interpolation 'intrpol' or single linear fit 'linear' are available
-Linearization.get_linearization(output_file_name, output_file_path, pulser_calibration, pulse_mV_list, pulser_spectrum, method='interpol', testplot=True, cutoff=75)
+Linearization.get_linearization(output_file_name, output_file_path,
+                                pulse_mV_list, pulser_spectrum,
+                                pulser_calibration=pulser_calibration, method='interpol',
+                                testplot=True, cutoff=75)

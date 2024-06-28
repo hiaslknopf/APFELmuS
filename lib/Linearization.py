@@ -185,7 +185,7 @@ def _fit_linearization(channel, mV, num_channels, method):
         channel: The channel numbers of the peaks
         mV: The measured mV signal of the peaks
         num_channels: The number of channels of the MCA
-        method: The method for the linearization curve fit (linear, piecewise)
+        method: The method for the linearization curve fit (linear, piecewise, linear_force_zero)
     Returns:
         x, y of the fit function
     """
@@ -195,15 +195,9 @@ def _fit_linearization(channel, mV, num_channels, method):
 
         popt = np.polyfit(channel, mV, 1)
         y_fit = np.polyval(popt, np.linspace(1, num_channels, num_channels))
-
-    """ if method == 'piecewise':
-        # Piecewise linear fit - Probably needs manual input (Doesnt work like this)
-
-        popt, _ = curve_fit(__piecewise_linear, channel, mV)
-        y_fit = np.array(__piecewise_linear(np.linspace(1, num_channels, num_channels), *popt)) """
     
     if method == 'interpol':
-        """ Point to point interpolation """
+        # Point to point linear interpolation
 
         #Linear extrapolation
         new_mV = mV[-2] + (num_channels - channel[-2]) / (channel[-1] - channel[-2]) * (mV[-1] - mV[-2])
@@ -217,8 +211,13 @@ def _fit_linearization(channel, mV, num_channels, method):
 
         y_fit = interpolate.interp1d(channel, mV)(np.linspace(1, num_channels, num_channels))
     
+    elif method == 'linear_force_zero':
+        # Single linear fit with forced zero intercept
+        popt, _ = curve_fit(lambda x, a: a*x, channel, mV)
+        y_fit = np.array([popt[0]*x for x in np.linspace(1, num_channels, num_channels)])
+    
     else:
-        raise ValueError(f'Linearizaiton method {method} not implemented. (linear, interpol)')
+        raise ValueError(f'Linearizaiton method {method} not implemented. (linear, interpol, linear_force_zero)')
         
     return np.linspace(1, num_channels, num_channels), y_fit
 
