@@ -20,7 +20,7 @@ files = campaign1.get_files_with_format('tests/testdata')
 
 #Remove all MCA files and just show root (for example)
 for file in files:
-    if file[-3:] == 'MCA':
+    if file[-3:] == 'MCA'or file[-3:] == 'csv':
         MicroDosimetry.delete_measurement(campaign1, file[:-4])
 
 #----------------------------------------------------

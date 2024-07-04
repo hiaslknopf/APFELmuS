@@ -80,19 +80,39 @@ def __on_pick(event, graphs, fig):
     fig.canvas.draw()
 
 def get_mean_value(measurement):
-    """ Calculate mean value of a given spectrum (integral of y(x)dx)
+    """ Calculate mean value of a given spectrum via integration
+
+    Warning: This is not yet implemented for all possible combinations and not tested!
     
     Args:
         measurement: The spectrum to be analyzed
     Returns:
-        mean: The calculated mean value
+        mean_F: Frequency mean value
+        mean_D: Dose mean value
     """
 
     x = measurement.data[measurement.x_axis].to_numpy()
     y = measurement.data[measurement.y_axis].to_numpy()
 
-    mean = np.trapz(x*y, x=x, dx=1.0)
+    if np.trapz(x*y, x=x, dx=1.0) == 1.0:
+        raise ValueError('The spectrum cannot be normalized when taking an average. The integral of the spectrum is 1.0. Please check the data.')
 
+    if measurement.y_axis == 'f(y)':
+        mean_F = np.trapz(x*y, x=x, dx=1.0)
+        mean_D = np.trapz(x*x*y, x=x, dx=1.0) / mean_F
+    
+    elif measurement.y_axis == 'd(y)':
+        mean_F = 0.0
+        mean_D = np.trapz(x*y, x=x, dx=1.0)
+    
+    elif measurement.y_axis == 'yf(y)':
+        mean_F = np.trapz(y, x=x, dx=1.0)
+        mean_D = np.trapz(x*y, x=x, dx=1.0)
+    
+    elif measurement.y_axis == 'yd(y)':
+        mean_F = 0.0
+        mean_D = np.trapz(y, x=x, dx=1.0)
+        
     if measurement.x_axis == 'ENERGY':
         unit = 'keV'
     elif measurement.x_axis == 'LINEAL ENERGY':
@@ -102,13 +122,20 @@ def get_mean_value(measurement):
     elif measurement.x_axis == 'LET':
         unit = 'keVµm$^{-1}$'
 
-    print(f'Mean value of {measurement.y_axis} = {mean: .3f} {unit}')
+    if mean_F == 0.0:
+        print('Frequency mean value cannot be calculated from the given spectrum')
+    else:
+        print(f'Frequency mean value of {measurement.y_axis} = {mean_F: .3f} {unit}')
+    if mean_D == 0.0:
+        print('Dose mean value cannot be calculated from the given spectrum')
+    else:   
+        print(f'Dose mean value of {measurement.y_axis} = {mean_D: .3f} {unit}')
 
-    return mean
+    return mean_F, mean_D
 
-def plot_single(measurement, name=False, output_path=False,
-                mean=False, step=False, scale='log', xlim=[1, 1000],
-                show_plot=True, interactive=True, gui=False, fig=None, ax=None):
+def plot_single(measurement, name:str=False, output_path:str=False,
+                mean:float=False, step:bool=False, scale:str='log', xlim:list=[0.1, 1000],
+                show_plot:bool=True, interactive:bool=True, gui=False, fig=None, ax=None):
     """ View and save a single spectrum plot
 
     Args:
@@ -195,8 +222,8 @@ def plot_single(measurement, name=False, output_path=False,
         fig.savefig(f"{output_path}/{name}.png", dpi=600, bbox_inches='tight', orientation='portrait')
         print(f'"{name}".png saved to "{output_path}"')
 
-def plot_campaign(campaign, name=False, output_path=False, xlim=[1, 1000],
-                  step=False, scale='log', skip_noise = 50, show_plot=True, interactive=True):
+def plot_campaign(campaign, name:str=False, output_path:str=False, xlim:list=[1, 1000],
+                  step:bool=False, scale:str='log', skip_noise:int = 50, show_plot:bool=True, interactive:bool=True):
     """ View and save multiple spectra in one plot
     
     Args:

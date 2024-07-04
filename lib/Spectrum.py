@@ -7,9 +7,27 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+from scipy.interpolate import interp1d
+from scipy.optimize import minimize
+
 """ This module contains all the functions for the manipulation of spectra """
 
-def _lin_2_log(measurement, n_bins_per_decade):
+def _find_nearest_idx_and_value(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx, array[idx]
+
+def _gain_match_chi2(k, y_ref, y_match):
+    """ Adjust the gain of y_match with a factor k to match the reference spectrum y_ref"""
+    a = y_ref - k*y_match
+    
+    # Remove all math.nan values
+    a = a[~np.isnan(a)]
+    
+    chi2 = np.sum(np.square(a))
+    return chi2
+
+def _lin_2_log(measurement, n_bins_per_decade: int):
     """ Calculate n evenly spaced logarithmic bins per decade for a given x_axis
 
     Args:
@@ -35,18 +53,38 @@ def _lin_2_log(measurement, n_bins_per_decade):
 
     return lin_to_log_x
 
-def cutoff(measurement, channels):
+def cutoff(measurement, channels:int=None, energy:float=None, lineal_energy:float=None):
     """ Low energy cutoff for noisy channels
+    Give either channels or energy as cutoff value
     
     Args:
         measurement: The spectrum to be analyzed
-        channels: Number of channels/values to be set zero
+        channels: Number of initial channels to be set zero
+        energy: Energy value to be set as cutoff (keV)
+        lineal_energy: Lineal energy value to be set as cutoff (keV/um)
     """
 
-    measurement.data.loc[:channels, measurement.y_axis] = 0
-    print(f'Channels {channels} and below cut off: {measurement.name}')
+    if channels:        
+        measurement.data.loc[:channels, measurement.y_axis] = 0
+        print(f'Channels {channels} and below cut off: {measurement.name}')
+    
+    elif energy:
+        if measurement.x_axis != 'ENERGY':
+            raise ValueError('This manipulation only works for a calibrated energy axes')
+        
+        idx, value = _find_nearest_idx_and_value(measurement.data[measurement.x_axis].tolist(), energy)
+        measurement.data.loc[:idx, measurement.y_axis] = 0
+        print(f'Energy {value} (Channel {idx}) and below cut off: {measurement.name}')
+    
+    elif lineal_energy:
+        if measurement.x_axis != 'LINEAL ENERGY':
+            raise ValueError('This manipulation only works for a calibrated lineal energy axes')
+        
+        idx, value = _find_nearest_idx_and_value(measurement.data[measurement.x_axis].tolist(), lineal_energy)
+        measurement.data.loc[:idx, measurement.y_axis] = 0
+        print(f'Lineal energy {value} (Channel {idx}) and below cut off: {measurement.name}')
 
-def logarithmic_binning(measurement, n_bins_per_decade):
+def logarithmic_binning(measurement, n_bins_per_decade:int):
     """ Rescale measurement dataframe to a (semi)logarithmic x-axis
     
     Args:
@@ -79,7 +117,7 @@ def logarithmic_binning(measurement, n_bins_per_decade):
 
     print(f'Spectrum has been logarithmically binned with {n_bins_per_decade} bins per decade: {measurement.name}')
 
-def probability_function(measurement, type_of_dist):
+def probability_function(measurement, type_of_dist:str):
     """ To get from MCA spectrum counts(channel) to F(y) or D(y)
     
     The value of the distribution function F(y) is the probability that the lineal energy is equal to or less than y
@@ -291,11 +329,6 @@ def normalize_spectrum(measurement):
     x = x[1:len(x)-2]
     pdf = pdf[:len(pdf)-1] 
 
-    #TODO: Why does Sandra do this? Shouldn't every Spectrum be normalized to A=1
-    #if measurement.y_axis in ['yf(y)', 'yd(y)']:
-    #    #Extra y needs to be stripped away
-    #    pdf = np.divide(pdf,x)
-
     sum_for_norm = []
 
     for i in range(len(pdf)):
@@ -321,7 +354,7 @@ def normalize_spectrum(measurement):
     area = np.trapz(measurement.data[measurement.y_axis], x=measurement.data[measurement.x_axis], dx=1.0)
     print(f"{measurement.name} normalized to A={area: .3f}")
 
-def extrapolate(measurement, method):
+def extrapolate(measurement, method:str):
     """ Append an extrapolation towards lower energies to the measurement dataframe
     
     Args:
@@ -363,22 +396,33 @@ def extrapolate(measurement, method):
     
     print(f'Spectrum exttrapolated: {measurement.name}')
 
-def merge_spectra(measurements):
+def merge_spectra(measurements: list, overlap_regions: list, scaling_factors: list, stitching_points: list, testplots: bool = False):
     """ Merge several spectra (df objects) into one dataframe object and match the gains
+        Be sure to provide the parameters in the order, the data appears in the spectrum: HIGH -> MID -> LOW
+        The highest gain means the lowest energies !!!
     
     Args:
-        measurements: The list of spectra to be merged
+        measurements: The list of spectra to be merged (two or three gains possible: LOW, MID, HIGH)
+        overlap_regions: The overlap regions for the different gains: MIGH-MID, MID-LOW in (lineal) energy units (list of lists)
+        scaling_factors: The scaling factors or an educated guess from the lowest blabla (list of floats)
+        stitching_points: The points where the different gains are stitched together (list of floats)
     Returns:
         merged_spectrum: The merged spectrum (Measurement object)
+        stitching_info: The information about final parameters (dict)
     """
+
+    #TODO: Brauch ich eine gemeinsame x-Achse für alle 3? Also iwie interpolieren, dass gleich gebinnt
+
+    color_map = {'HIGH': 'cornflowerblue', 'MID': 'orange', 'LOW': 'forestgreen',
+                 'overlap_low': 'r', 'overlap_high': 'b'}
+    GRANULARITY = 100 # For the overlap regions
 
     #---------Check if data matches-----------
     check_x = []
     check_y = []
 
-    #TODO: Make this more flexible
-    if len(measurements) != 3:
-        raise ValueError('You can only merge 3 spectra: LOW, MID, HIGH')
+    if len(measurements) < 2:
+        raise ValueError('Please provide at least two spectra for merging')
 
     for i in range(len(measurements)):
         check_x.append(measurements[i].x_axis)
@@ -395,135 +439,220 @@ def merge_spectra(measurements):
         raise ValueError('The spectra have to have the same y axes')
 
     if measurements[0].x_axis not in ['ENERGY', 'LINEAL ENERGY']:
-        raise ValueError('The spectra have to have a calibrated lineal energy axis')
+        raise ValueError('The spectra have to have a calibrated energy axis')
     
     if measurements[0].gain == 'SIMULATION':
-        raise ValueError('The spectra have to be measured spectra, not simulations')
+        raise ValueError('The spectra have to be measured spectra, not simulation data')
+    
+    # Check is upper and lower bounds are provided and in the right order
+    if len(overlap_regions) != len(measurements)-1:
+        raise ValueError('Please provide sufficient overlap intervals for the different gains in the right order')
+    if len(scaling_factors) != len(measurements)-1:
+        raise ValueError('Please provide sufficient scaling factors for the different gains in the right order')
+    if len(stitching_points) != len(measurements)-1:
+        raise ValueError('Please provide sufficient stitching points for the different gains in the right order')
+    
+    for i in range(len(overlap_regions)):
+        if overlap_regions[i][0] > overlap_regions[i][1]:
+            raise ValueError('The overlap regions have to be provided in the right order')
 
-    #---------- Find best fit for a common x-axis ----------
-    #TODO: Linear fit siehe Sandra (dass gleiches sampling für alle 3)
+    # Sort the measurements by gain (in the order they appear in the spectrum !!!)
+    sorting_order = {'HIGH': 0, 'MID': 1, 'LOW': 2}
+    measurements.sort(key=lambda x: sorting_order[x.gain])
 
-    #---------- Algorithm for overlap and gain match -----------
-    #TODO: Implement algorithms for finding these or choose manually
+    data_x = []
+    data_y = []
+    for meas in range(len(measurements)):
+        data_x.append(measurements[meas].data[measurements[meas].x_axis].tolist())
+        data_y.append(measurements[meas].data[measurements[meas].y_axis].tolist())
 
-    #Overlap regions
-    LM_overlap = [8,5]
-    MH_overlap = [20,10]
+    # Overlap regions
+    bounds_dict = {'lower_overlap' : {'lower_energy_guess': overlap_regions[0][0], 'upper_energy_guess': overlap_regions[0][1],
+                                      'lower_idx_low': 0, 'upper_idx_low': 0, 'lower_idx_high': 0, 'upper_idx_high': 0,
+                                      'lower_energy_low': 0, 'upper_energy_low': 0, 'lower_energy_high': 0, 'upper_energy_high': 0,
+                                      'x_axis_low': [], 'x_axis_high': [], 'y_axis_low': [], 'y_axis_high': []}}
+    if len(measurements) == 3:
+        bounds_dict['upper_overlap'] = {'lower_energy_guess': overlap_regions[1][0], 'upper_energy_guess': overlap_regions[1][1],
+                                        'lower_idx_low': 0, 'upper_idx_low': 0, 'lower_idx_high': 0, 'upper_idx_high': 0,
+                                        'lower_energy_low': 0, 'upper_energy_low': 0, 'lower_energy_high': 0, 'upper_energy_high': 0,
+                                        'x_axis_low': [], 'x_axis_high': [], 'y_axis_low': [], 'y_axis_high': []}
+                                        
+    # Fill the dictionary
+    for i, meas in enumerate(measurements):
+        if i == 0:
+            # HIGHEST GAIN
+            lower_idx_low, lower_energy_low = _find_nearest_idx_and_value(data_x[i], bounds_dict['lower_overlap']['lower_energy_guess'])
+            upper_idx_low, upper_energy_low = _find_nearest_idx_and_value(data_x[i], bounds_dict['lower_overlap']['upper_energy_guess'])
+            bounds_dict['lower_overlap']['lower_idx_low'] = lower_idx_low
+            bounds_dict['lower_overlap']['lower_energy_low'] = lower_energy_low
+            bounds_dict['lower_overlap']['upper_idx_low'] = upper_idx_low
+            bounds_dict['lower_overlap']['upper_energy_low'] = upper_energy_low
+        if i == 1:
+            # SECOND HIGHEST GAIN
+            lower_idx_high, lower_energy_high = _find_nearest_idx_and_value(data_x[i], bounds_dict['lower_overlap']['lower_energy_guess'])
+            upper_idx_high, upper_energy_high = _find_nearest_idx_and_value(data_x[i], bounds_dict['lower_overlap']['upper_energy_guess'])
+            bounds_dict['lower_overlap']['lower_idx_high'] = lower_idx_high
+            bounds_dict['lower_overlap']['lower_energy_high'] = lower_energy_high
+            bounds_dict['lower_overlap']['upper_idx_high'] = upper_idx_high
+            bounds_dict['lower_overlap']['upper_energy_high'] = upper_energy_high
 
-    #Gain of spectra = scaled y_axis
-    scale_LM = 0.4642104662836921 #Low gain gets scaled
-    scale_MH = 1.0282117319899817 #Mid gain gets scaled
+            if len(measurements) == 3:
+                # OPTIONAL LOWEST GAIN (3 gains)
+                lower_idx_low, lower_energy_low = _find_nearest_idx_and_value(data_x[i], bounds_dict['upper_overlap']['lower_energy_guess'])
+                upper_idx_low, upper_energy_low = _find_nearest_idx_and_value(data_x[i], bounds_dict['upper_overlap']['upper_energy_guess'])
+                bounds_dict['upper_overlap']['lower_idx_low'] = lower_idx_low
+                bounds_dict['upper_overlap']['lower_energy_low'] = lower_energy_low
+                bounds_dict['upper_overlap']['upper_idx_low'] = upper_idx_low
+                bounds_dict['upper_overlap']['upper_energy_low'] = upper_energy_low
 
-    #-------------Have a look at the data-----------------
-    fig, ax = plt.subplots()
+        if i == 2:
+            # OPTIONAL LOWEST GAIN (3 gains)
+            lower_idx_high, lower_energy_high = _find_nearest_idx_and_value(data_x[i], bounds_dict['upper_overlap']['lower_energy_guess'])
+            upper_idx_high, upper_energy_high = _find_nearest_idx_and_value(data_x[i], bounds_dict['upper_overlap']['upper_energy_guess'])
+            bounds_dict['upper_overlap']['lower_idx_high'] = lower_idx_high
+            bounds_dict['upper_overlap']['lower_energy_high'] = lower_energy_high
+            bounds_dict['upper_overlap']['upper_idx_high'] = upper_idx_high
+            bounds_dict['upper_overlap']['upper_energy_high'] = upper_energy_high
+   
+    # Create x-axes and y-axes for the overlap regions
+    bounds_dict['lower_overlap']['x_axis_low'] = np.linspace(bounds_dict['lower_overlap']['lower_energy_low'], bounds_dict['lower_overlap']['upper_energy_low'], GRANULARITY)
+    bounds_dict['lower_overlap']['x_axis_high'] = np.linspace(bounds_dict['lower_overlap']['lower_energy_high'], bounds_dict['lower_overlap']['upper_energy_high'], GRANULARITY)
+    bounds_dict['lower_overlap']['y_axis_low'] = interp1d(data_x[0][bounds_dict['lower_overlap']['lower_idx_low']:bounds_dict['lower_overlap']['upper_idx_low']],
+                                                          data_y[0][bounds_dict['lower_overlap']['lower_idx_low']:bounds_dict['lower_overlap']['upper_idx_low']],
+                                                          bounds_error=False)(bounds_dict['lower_overlap']['x_axis_low'])
+    bounds_dict['lower_overlap']['y_axis_high'] = interp1d(data_x[1][bounds_dict['lower_overlap']['lower_idx_high']:bounds_dict['lower_overlap']['upper_idx_high']],
+                                                           data_y[1][bounds_dict['lower_overlap']['lower_idx_high']:bounds_dict['lower_overlap']['upper_idx_high']],
+                                                           bounds_error=False)(bounds_dict['lower_overlap']['x_axis_high'])
+    
+    if len(measurements) == 3:
+        bounds_dict['upper_overlap']['x_axis_low'] = np.linspace(bounds_dict['upper_overlap']['lower_energy_low'],bounds_dict['upper_overlap']['upper_energy_low'], GRANULARITY)
+        bounds_dict['upper_overlap']['x_axis_high'] = np.linspace(bounds_dict['upper_overlap']['lower_energy_high'], bounds_dict['upper_overlap']['upper_energy_high'], GRANULARITY)
+        bounds_dict['upper_overlap']['y_axis_low'] = interp1d(data_x[1][bounds_dict['upper_overlap']['lower_idx_low']:bounds_dict['upper_overlap']['upper_idx_low']],
+                                                              data_y[1][bounds_dict['upper_overlap']['lower_idx_low']:bounds_dict['upper_overlap']['upper_idx_low']],
+                                                              bounds_error=False)(bounds_dict['upper_overlap']['x_axis_low'])
+        bounds_dict['upper_overlap']['y_axis_high'] = interp1d(data_x[2][bounds_dict['upper_overlap']['lower_idx_high']:bounds_dict['upper_overlap']['upper_idx_high']],
+                                                               data_y[2][bounds_dict['upper_overlap']['lower_idx_high']:bounds_dict['upper_overlap']['upper_idx_high']]
+                                                               , bounds_error=False)(bounds_dict['upper_overlap']['x_axis_high'])
 
-    for i in range(len(measurements)):
+    #testplot
+    if testplots:
+        fig, ax = plt.subplots()
 
-        x = measurements[i].data[measurements[i].x_axis]
-        y = measurements[i].data[measurements[i].y_axis]
+        for i in range(len(measurements)):
+            ax.step(data_x[i], data_y[i], label = f"{measurements[i].gain}", color = color_map[measurements[i].gain])
+        
+        # Plot the overlap regions
+        ax.axvline(x = bounds_dict['lower_overlap']['lower_energy_low'], color=color_map['overlap_low'], linestyle='--')
+        ax.axvline(x = bounds_dict['lower_overlap']['upper_energy_low'], color=color_map['overlap_low'], linestyle='--')
+        ax.axvline(x = bounds_dict['lower_overlap']['lower_energy_high'], color='darkorange', linestyle='--')
+        ax.axvline(x = bounds_dict['lower_overlap']['upper_energy_high'], color='darkorange', linestyle='--')
+        ax.fill_betweenx([0, 5*max(data_y[0])], bounds_dict['lower_overlap']['lower_energy_low'], bounds_dict['lower_overlap']['upper_energy_low'],
+                         color='r', alpha=0.25, label='Overlap region 1') 
 
-        if measurements[i].gain == 'LOW':
-            y *= scale_LM
-            ax.plot(x, y, label = f"{measurements[i].gain} * {scale_LM: .2f}")
-        elif measurements[i].gain == 'HIGH':
-            y *= scale_MH
-            ax.plot(x, y, label = f"{measurements[i].gain} * {scale_MH: .2f}")
-        else:
-            ax.plot(x, y, label = f"{measurements[i].gain}")
+        if len(measurements) == 3:
+            ax.axvline(x = bounds_dict['upper_overlap']['lower_energy_low'], color=color_map['overlap_high'], linestyle='--')
+            ax.axvline(x = bounds_dict['upper_overlap']['upper_energy_low'], color=color_map['overlap_high'], linestyle='--')
+            ax.axvline(x = bounds_dict['upper_overlap']['lower_energy_high'], color='darkblue', linestyle='--')
+            ax.axvline(x = bounds_dict['upper_overlap']['upper_energy_high'], color='darkblue', linestyle='--')
+            ax.fill_betweenx([0, 5*max(data_y[0])], bounds_dict['upper_overlap']['lower_energy_low'], bounds_dict['upper_overlap']['upper_energy_low'],
+                            color='b', alpha=0.25, label='Overlap region 2')
 
-    ax.set_xlim(0.01,1000)
-    ax.set_ylim(0.0,1.1*np.max(y))
+        ax.legend()
+        ax.set_xscale('log')
+        ax.set_xlim(0.01,1000)
+        ax.set_ylim(0, 1.1*max(np.max(data_y[i]) for i in range(len(data_y))))
 
-    if measurements[0].x_axis == 'LINEAL ENERGY':
-        ax.set_xlabel('y [keV/um]')
-    elif measurements[0].x_axis == 'ENERGY':
-        ax.set_xlabel('E [keV]')
+        ax.set_title('Unscaled spectra - Overlap regions')
 
-    ax.set_ylabel(measurements[0].y_axis)
-    ax.set_title('Merged spectra - overlap')
+        plt.show()
 
-    #Current overlap regions
-    ax.axvline(x = LM_overlap[0], color='r', linestyle='--', label = 'LM overlap region')
-    ax.axvline(x = LM_overlap[1], color='r', linestyle='--')
-    ax.axvline(x = MH_overlap[0], color='g', linestyle='--', label='MH overlap region')
-    ax.axvline(x = MH_overlap[1], color='g', linestyle='--')
+    # -----------------Gain matching-----------------
 
-    ax.legend()
-    ax.set_xscale('log')
+    # First region: Match from left to right
+    # Scale HIGH to MID or MID to LOW
+    scaling_factor_low = float(minimize(_gain_match_chi2, scaling_factors[0],
+                                  args=(bounds_dict['lower_overlap']['y_axis_high'], bounds_dict['lower_overlap']['y_axis_low'])).x)
+    # Second region: Match from right to left
+    # Scale LOW to MID or MID to HIGH
+    if len(measurements) == 3:
+        scaling_factor_high = float(minimize(_gain_match_chi2, scaling_factors[1],
+                                       args=(bounds_dict['upper_overlap']['y_axis_low'], bounds_dict['upper_overlap']['y_axis_high'])).x)
 
-    plt.show()
+    if testplots:
+        fig, ax = plt.subplots()
 
-    #-----------------Merge the data into a new measurement-------------------
+        ax.step(data_x[0], np.multiply(data_y[0],scaling_factor_low), label = f"{measurements[0].gain}*{scaling_factor_low:.3f}", color = color_map[measurements[0].gain])
+        ax.step(data_x[1], data_y[1], label = f"{measurements[1].gain}", color = color_map[measurements[1].gain])
+        if len(measurements) == 3:
+            ax.step(data_x[2], np.multiply(data_y[2], scaling_factor_high), label = f"{measurements[2].gain}*{scaling_factor_high:.3f}", color = color_map[measurements[2].gain])
 
-    #TODO: Take boundaries from algorithm
-    upper_HG = 175
-    lower_MG = 20
-    upper_MG = 80
-    lower_LG = 100
+        ax.axvline(x = bounds_dict['lower_overlap']['lower_energy_low'], color=color_map['overlap_low'], linestyle='--', label = 'Overlap region 1 - low')
+        ax.axvline(x = bounds_dict['lower_overlap']['upper_energy_low'], color=color_map['overlap_low'], linestyle='--')
+        ax.fill_betweenx([0, 5*max(data_y[0])], bounds_dict['lower_overlap']['lower_energy_low'], bounds_dict['lower_overlap']['upper_energy_low'], color='r', alpha=0.25)
 
-    x_list = []
-    y_list = []
+        if len(measurements) == 3:
+            ax.axvline(x = bounds_dict['upper_overlap']['lower_energy_low'], color=color_map['overlap_high'], linestyle='--', label = 'Overlap region 2 - low')
+            ax.axvline(x = bounds_dict['upper_overlap']['upper_energy_low'], color=color_map['overlap_high'], linestyle='--')
+            ax.fill_betweenx([0, 5*max(data_y[0])], bounds_dict['upper_overlap']['lower_energy_low'], bounds_dict['upper_overlap']['upper_energy_low'], color='b', alpha=0.25)
+        
+        ax.legend()
+        ax.set_xscale('log')
+        ax.set_xlim(0.01,1000)
+        ax.set_ylim(0, 1.5)
+        plt.show()
 
+    #-----------------Stitch the spectra together-----------------
 
-    fig, ax = plt.subplots()
+    stitching_idx_low, _ = _find_nearest_idx_and_value(data_x[0], stitching_points[0])
+    data_x[0] = data_x[0][:stitching_idx_low]
+    data_y[0] = np.multiply(data_y[0][:stitching_idx_low], scaling_factor_low)
 
-    for i in range(len(measurements)):
+    if len(measurements) == 2:
+        stitching_idx_high, _ = _find_nearest_idx_and_value(data_x[1], stitching_points[0])
+        data_x[1] = data_x[1][stitching_idx_high:]
+        data_y[1] = data_y[1][stitching_idx_high:]
+    
+    if len(measurements) == 3:
+        stitching_idx_med_1, _ = _find_nearest_idx_and_value(data_x[1], stitching_points[0])
+        stitching_idx_med_2, _ = _find_nearest_idx_and_value(data_x[1], stitching_points[1])   
+        data_x[1] = data_x[1][stitching_idx_med_1:stitching_idx_med_2]
+        data_y[1] = data_y[1][stitching_idx_med_1:stitching_idx_med_2]
 
-        x = measurements[i].data[measurements[i].x_axis].tolist()
-        y = measurements[i].data[measurements[i].y_axis].tolist()
+        stitching_idx_high, _ = _find_nearest_idx_and_value(data_x[2], stitching_points[1])
+        data_x[2] = data_x[2][stitching_idx_high:]
+        data_y[2] = np.multiply(data_y[2][stitching_idx_high:], scaling_factor_high)
 
-        if measurements[i].gain == 'LOW':
-            ax.plot(x[lower_LG:], y[lower_LG:], label = f"{measurements[i].gain}")
-            ax.axvline(x = x[lower_LG], color='b', linestyle='--')
-        elif measurements[i].gain == 'HIGH':
-            ax.plot(x[:upper_HG], y[:upper_HG], label = f"{measurements[i].gain}")
-            ax.axvline(x = x[upper_HG-1], color='y', linestyle='--')
-        else:
-            ax.plot(x[lower_MG:upper_MG], y[lower_MG:upper_MG], label = f"{measurements[i].gain}")
-            ax.axvline(x = x[lower_MG], color='r', linestyle='--')
-            ax.axvline(x = x[upper_MG-1], color='r', linestyle='--')
+    if testplots:
+        fig, ax = plt.subplots()
 
-    ax.set_xlim(0.01,1000)
-    ax.set_ylim(0.0,1.1*np.max(y))
+        ax.step(data_x[0],data_y[0], label = f"{measurements[0].gain}*{scaling_factor_low:.3f}", color = color_map[measurements[0].gain])
+        ax.step(data_x[1], data_y[1], label = f"{measurements[1].gain}", color = color_map[measurements[1].gain])
+        if len(measurements) == 3:
+            ax.step(data_x[2], data_y[2], label = f"{measurements[2].gain}*{scaling_factor_high:.3f}", color = color_map[measurements[2].gain])
 
-    if measurements[0].x_axis == 'LINEAL ENERGY':
-        ax.set_xlabel('y [keV/um]')
-    elif measurements[0].x_axis == 'ENERGY':
-        ax.set_xlabel('E [keV]')
+        ax.axvline(x = stitching_points[0], color=color_map['overlap_low'], linestyle='--', label = 'Stitching point 1', lw=2)
+        if len(measurements) == 3:
+            ax.axvline(x = stitching_points[1], color=color_map['overlap_high'], linestyle='--', label = 'Stitching point 2', lw=2)
+        
+        ax.legend()
+        ax.set_xscale('log')
+        ax.set_xlim(0.01,1000)
+        ax.set_ylim(0, 1.1*max(np.max(data_y[i]) for i in range(len(data_y))))
+        plt.show()
 
-    ax.set_ylabel(measurements[0].y_axis)
-    ax.set_title('Merged spectra - Cutoff')
+    #-----------------Merge the spectra-----------------    
+    merged_spectrum_x = np.concatenate((data_x[0], data_x[1]))
+    if len(measurements) == 3:
+        merged_spectrum_x = np.concatenate((merged_spectrum_x, data_x[2]))
 
-    ax.legend()
-    ax.set_xscale('log')
-
-    plt.show()
-
-    for i in range(len(measurements)):
-
-        x = measurements[i].data[measurements[i].x_axis].tolist()
-        y = measurements[i].data[measurements[i].y_axis].tolist()
-
-        if measurements[i].gain == 'LOW':
-            x_list.append(x[lower_LG:])
-            y_list.append(y[lower_LG:])
-        elif measurements[i].gain == 'HIGH':
-            x_list.append(x[:upper_HG])
-            y_list.append(y[:upper_HG])
-        else:
-            x_list.append(x[lower_MG:upper_MG])
-            y_list.append(y[lower_MG:upper_MG])
-
-    x_list = [item for sublist in x_list for item in sublist]
-    y_list = [item for sublist in y_list for item in sublist]
+    merged_spectrum_y = np.concatenate((data_y[0], data_y[1]))
+    if len(measurements) == 3:
+        merged_spectrum_y = np.concatenate((merged_spectrum_y, data_y[2]))
 
     #Create new Dataframe
     merged_df = pd.DataFrame()
-    merged_df[measurements[0].x_axis] = x_list
-    merged_df[measurements[0].y_axis] = y_list
-    
-    merged_df = merged_df.sort_values(measurements[0].x_axis)
-    merged_df = merged_df.reset_index(drop=True)
+    merged_df[measurements[0].x_axis] = merged_spectrum_x
+    merged_df[measurements[0].y_axis] = merged_spectrum_y
 
     #Create new measurement object
     merged_spectrum = Measurement()
@@ -531,10 +660,12 @@ def merge_spectra(measurements):
 
     merged_spectrum._x_axis = measurements[0].x_axis
     merged_spectrum._y_axis = measurements[0].y_axis
-    merged_spectrum._num_channels = measurements[0].num_channels
-    merged_spectrum._date = measurements[0].date
+    merged_spectrum._num_channels = len(merged_spectrum_x)
     merged_spectrum._detector = measurements[0].detector
+    merged_spectrum._particle = measurements[0].particle
     merged_spectrum._gain = 'merged'
+
+    # What about date, live time, dead time, etc.?
 
     print(f'Spectra have been merged')
 
@@ -563,7 +694,7 @@ def retrieve_original_spectrum(measurement):
         measurement.data[measurement.y_axis] = measurement.original_data[measurement.y_axis].tolist()
         measurement.data['mV'] = measurement.original_data['mV']
    
-def add_spectra(measurements_list):
+def add_spectra(measurements_list:list):
     """ Add the counts of an arbitrary number of spectra
         This can be used to obtain a more distinct particle edge for the calibration procedure
         

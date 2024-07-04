@@ -138,7 +138,7 @@ def _plot_chord_length_dist(dict, ax=None):
     ax.set_ylim(0,np.max(chord_length_dist['pdf']) * 1.1)
     plt.show()
 
-def get_chord_length(measurement, shape, dimension, plot=False):
+def get_chord_length(measurement, shape:str, dimension:float, plot:bool=False):
     """ Get chord lengths for a given geometry (shape, dimensions)
     This can be used without a measurement by giving 'None'
     Or attached to the measurement object
@@ -193,7 +193,7 @@ def get_chord_length(measurement, shape, dimension, plot=False):
     
     return mean, max, chord_length_dist
 
-def get_stopping_power(measurement, chord_length='mean', database='SRIM', precision=0.01, particle='None', material='None', plot=False):
+def get_stopping_power(measurement, chord_length:str='mean', database:str='SRIM', precision:float=0.01, particle:str='None', material:str='None', plot:bool=False):
         """ Get maximum lineal energy or LET with stopping power tables.
         Algorithm for unidirectional beam and normal incidence.
 
@@ -354,7 +354,7 @@ def get_stopping_power(measurement, chord_length='mean', database='SRIM', precis
         
         return ymax, Lmax, interpol_dict
 
-def get_edge_pos(measurement, marker_point, fit_bounds=None, check_plot=False):
+def get_edge_pos(measurement, marker_point:str, fit_bounds:list=None, check_plot:bool=False):
         """ Find edge position for a given spectrum. This is done via a Fermi function following:        
         
         [1] D. Moro, et al., Radiat Prot Dosimetry, vol. 166, no. 1-4, pp. 233-237, Sep. 2015, doi: 10.1093/rpd/ncv153.
@@ -447,7 +447,7 @@ def get_edge_pos(measurement, marker_point, fit_bounds=None, check_plot=False):
 
         return edge_pos_mV, cal_dict
 
-def scale_energy_axis(measurement, edge_pos_mV, max_energy_transfer, energy_axis='lineal', chord_length='mean'):
+def scale_energy_axis(measurement, edge_pos_mV:float, max_energy_transfer:float, energy_axis:str='lineal', chord_length:str='mean'):
         """ Scales x-axis from CHANNEL to keVµm-1
         The edge position has to be specified in mV. This can be done via the get_edge_pos method.
         A chord length has to be attached before scaling the energy axis. This can be done via the get_chord_length method.
@@ -493,7 +493,7 @@ def scale_energy_axis(measurement, edge_pos_mV, max_energy_transfer, energy_axis
         
         #print(f'Energy axis scaled to {measurement.x_axis} axis')
 
-def scale_energy_axis_with_factor(measurement, factor, energy_axis='lineal'):
+def scale_energy_axis_with_factor(measurement, factor:float, energy_axis:str='lineal'):
         """ Scales x-axis with a given conversion factor
         Factor has to be given in terms of mV -> keV/um or keV
 
@@ -520,7 +520,7 @@ def scale_energy_axis_with_factor(measurement, factor, energy_axis='lineal'):
         else:
             raise ValueError(f"Axis {energy_axis} is not a valid option")
 
-def lineal_energy_axis(measurement, chord_length='mean'):
+def lineal_energy_axis(measurement, chord_length:str='mean'):
     """ Scale an energy axis to a lineal energy axis by giving the mean_chord_length
 
     Args:

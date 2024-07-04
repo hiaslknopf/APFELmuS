@@ -57,7 +57,7 @@ def __read_Linearization_file(filepath, num_channels):
 
     return linearization_df
 
-def translate_MAESTRO_file(input_MAESTRO, input_linearization, output_path, name, info_dict):
+def translate_MAESTRO_file(input_MAESTRO:str, input_linearization:str, output_path:str, name:str, info_dict:dict):
 
     """ Translates a MAESTRO .Spe file together with a linearization file of an arbitrary format into an .MCA file for further use with the MicroDosimetry package.
 

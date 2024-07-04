@@ -221,8 +221,8 @@ def _fit_linearization(channel, mV, num_channels, method):
         
     return np.linspace(1, num_channels, num_channels), y_fit
 
-def get_linearization(name, output_path, pulse_mV_list, spectrum_file1, spectrum_file2=None, spectrum_file3=None,
-                      pulser_calibration = f'{ressources_path}/1to1_response.csv', method='linear', testplot=False, cutoff=False):
+def get_linearization(name:str, output_path:str, pulse_mV_list:list, spectrum_file1:str, spectrum_file2:str=None, spectrum_file3:str=None,
+                      pulser_calibration:str = f'{ressources_path}/1to1_response.csv', method:str='linear', testplot:bool=False, cutoff:bool=False):
     """ Get a calibration file (csv) in 4 steps
 
     - Read the pulser and spectrum file
@@ -233,6 +233,7 @@ def get_linearization(name, output_path, pulse_mV_list, spectrum_file1, spectrum
     Args:
         name: The name of the calibration file
         output_path: The path to save the plots
+        pulse_mV_list: The list of mV values to be used for the pulser calibration
         pulser_calibration: Calibration file of the pulser used (default: 1to1_response.csv)
         spectrum_file<n>: The spectrum file(s) to be read (max 3)
         method: The method for the linearization curve fit (linear, piecewise)
