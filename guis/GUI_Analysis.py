@@ -78,7 +78,8 @@ class GUI_Analysis:
 
         # Checkbox for calibration method
         self.calibration_method_var = tk.BooleanVar(value=False)
-        self.calibration_method_check = ttk.Checkbutton(self.frame_file_cal, text="Calibrate with edge + chord length", variable=self.calibration_method_var, command=self.toggle_calib_method)
+        self.calibration_method_check = ttk.Checkbutton(self.frame_file_cal, text="Calibrate with edge + chord length",
+                                                        variable=self.calibration_method_var, command=self.toggle_calib_method)
         self.calibration_method_check.grid(row=4, column=0, columnspan=3, sticky=tk.W)
 
         #Enter edge position (mV)
@@ -93,39 +94,38 @@ class GUI_Analysis:
         self.entry_mean_chord_length.grid(row=6, column=1, sticky=tk.W)
         ttk.Label(self.frame_file_cal, text="µm").grid(row=6, column=2, sticky=tk.W)
 
-        # Empty line
-        ttk.Label(self.frame_file_cal, text="").grid(row=7, column=0, columnspan=3, sticky=tk.W)
-
         # Variable to trace changes in the file entry
         self.file_var = tk.StringVar()
         self.file_var.trace_add("write", self.check_file_entry)
         self.entry_file_path["textvariable"] = self.file_var
 
-        # Option to cut off spectrum
-        self.cutoff_var = tk.BooleanVar(value=False)
-        self.cutoff_check = ttk.Checkbutton(self.frame_file_cal, text="Cut off spectrum:", variable=self.cutoff_var, command=self.toggle_cutoff)
-        self.cutoff_check.grid(row=9, column=0, sticky=tk.W)
-
-        # Entry for cutoff value
-        self.entry_cutoff = ttk.Entry(self.frame_file_cal, state=tk.DISABLED)
-        self.entry_cutoff.grid(row=9, column=1, sticky=tk.W)
-        ttk.Label(self.frame_file_cal, text="channel").grid(row=9, column=2, sticky=tk.W)
-
-        # Empty line
-        ttk.Label(self.frame_file_cal, text="").grid(row=10, column=0, columnspan=3, sticky=tk.W)
-
         # Two dropdown menus for info_dict detector and material
-        ttk.Label(self.frame_file_cal, text="Detector:").grid(row=11, column=0, sticky=tk.W)
+        ttk.Label(self.frame_file_cal, text="Detector:").grid(row=7, column=0, sticky=tk.W)
         self.detector_var = tk.StringVar()
         self.detector_var.set("silicon")
         self.detector_dropdown = ttk.OptionMenu(self.frame_file_cal, self.detector_var, "silicon", "silicon", "diamond", "sic")
-        self.detector_dropdown.grid(row=11, column=1, sticky=tk.W)
+        self.detector_dropdown.configure(state="disabled")
+        self.detector_dropdown.grid(row=7, column=1, sticky=tk.W)
 
-        ttk.Label(self.frame_file_cal, text="Particle:").grid(row=12, column=0, sticky=tk.W)
+        ttk.Label(self.frame_file_cal, text="Particle:").grid(row=8, column=0, sticky=tk.W)
         self.particle_var = tk.StringVar()
         self.particle_var.set("proton")
         self.material_dropdown = ttk.OptionMenu(self.frame_file_cal, self.particle_var, "proton", "proton", "carbon", "helium")
-        self.material_dropdown.grid(row=12, column=1, sticky=tk.W)      
+        self.material_dropdown.configure(state="disabled")
+        self.material_dropdown.grid(row=8, column=1, sticky=tk.W)
+
+        # Empty line
+        ttk.Label(self.frame_file_cal, text="").grid(row=9, column=0, columnspan=3, sticky=tk.W)
+
+        # Option to cut off spectrum
+        self.cutoff_var = tk.BooleanVar(value=False)
+        self.cutoff_check = ttk.Checkbutton(self.frame_file_cal, text="Cut off spectrum:", variable=self.cutoff_var, command=self.toggle_cutoff)
+        self.cutoff_check.grid(row=10, column=0, sticky=tk.W)
+
+        # Entry for cutoff value
+        self.entry_cutoff = ttk.Entry(self.frame_file_cal, state=tk.DISABLED)
+        self.entry_cutoff.grid(row=10, column=1, sticky=tk.W)
+        ttk.Label(self.frame_file_cal, text="channel").grid(row=10, column=2, sticky=tk.W)     
 
     def create_plot_selection_widgets(self):
 
@@ -337,7 +337,7 @@ class GUI_Analysis:
     def check_out_entry(self, *args):
         """ Lock output browse if no output is selected """
 
-        self.close_plots()
+        #self.close_plots()
 
         if self.save_plots_var.get():
             self.entry_out.config(state=tk.NORMAL)
@@ -439,10 +439,14 @@ class GUI_Analysis:
             self.entry_edge_pos.config(state=tk.NORMAL)
             self.entry_mean_chord_length.config(state=tk.NORMAL)
             self.entry_cal_factor.config(state=tk.DISABLED)
+            self.detector_dropdown.configure(state="enabled")
+            self.material_dropdown.configure(state="enabled")
         else:
             self.entry_edge_pos.config(state=tk.DISABLED)
             self.entry_mean_chord_length.config(state=tk.DISABLED)
             self.entry_cal_factor.config(state=tk.NORMAL)
+            self.detector_dropdown.configure(state="disabled")
+            self.material_dropdown.configure(state="disabled")
 
     def clear_num_bins_placeholder(self, event):
         # Clear the placeholder text when the entry gets focus
