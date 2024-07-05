@@ -184,8 +184,8 @@ class GUI_Analysis:
         ttk.Label(self.frame_output, text="Output:").grid(row=1, column=0, sticky=tk.W)
         self.entry_out = ttk.Entry(self.frame_output,state=tk.DISABLED)
         self.entry_out.grid(row=1, column=1, sticky=tk.W)
-        self.browse_out = ttk.Button(self.frame_output, text="Browse", command=self.browse_out,state=tk.DISABLED)
-        self.browse_out.grid(row=1, column=2, sticky=tk.W)
+        self.browse_out_button = ttk.Button(self.frame_output, text="Browse", command=self.browse_out,state=tk.DISABLED)
+        self.browse_out_button.grid(row=1, column=2, sticky=tk.W)
 
         ################################################################
         #-----------------------Button section-------------------------#
@@ -197,8 +197,8 @@ class GUI_Analysis:
         self.run_button = ttk.Button(self.button_frame, text="RUN", command=self.run)
         self.run_button.grid(row=0, column=0, padx=5, pady=5, ipadx=10, ipady=10, sticky=tk.W+tk.E+tk.N+tk.S)
 
-        self.run_button = ttk.Button(self.button_frame, text="CLOSE PLOTS", command=self.close_plots)
-        self.run_button.grid(row=0, column=1, padx=5, pady=5, ipadx=10, ipady=10, sticky=tk.W+tk.E+tk.N+tk.S)
+        self.close_plots_button = ttk.Button(self.button_frame, text="CLOSE PLOTS", command=self.close_plots)
+        self.close_plots_button.grid(row=0, column=1, padx=5, pady=5, ipadx=10, ipady=10, sticky=tk.W+tk.E+tk.N+tk.S)
 
         self.reset_button = ttk.Button(self.button_frame, text="RESET", command=self.reset_GUI)
         self.reset_button.grid(row=0, column=2, padx=5, pady=5, ipadx=10, ipady=10, sticky=tk.W+tk.E+tk.N+tk.S)
@@ -238,6 +238,34 @@ class GUI_Analysis:
         self.plot_objects['Welcome'] = (fig, ax, canvas)
 
         welcome_message(ax, "Analysis Toolkit")
+    
+    def plot_csv_data(self, campaign):
+
+        # Close the open plots
+        self.close_plots()
+
+        tab_text_str = campaign.measurements[self.meas_name].y_axis
+
+        tab_text = tk.Text(self.notebook, width=40, height=20, wrap=tk.WORD, bg="white", state=tk.DISABLED)
+        fig, ax, canvas = self.setup_plot(tab_text_str, tab_text)
+
+        Output.plot_single(campaign.measurements[self.meas_name], name=f'{self.meas_name}',
+                                   step=self.step_var.get(), mean=False, 
+                                   show_plot=False, gui=True, fig=fig, ax=ax)
+             
+        toolbar = NavigationToolbar2Tk(canvas, tab_text, pack_toolbar=False)
+        toolbar.grid(row=1, column=0, padx=10, pady=10, sticky=tk.S)
+        canvas.draw()
+
+        # Store the plot objects in the dictionary
+        self.plot_objects[tab_text_str] = (fig, ax, canvas)
+            
+        # Remove the welcome message
+        if 'Welcome' in self.plot_tabs:
+            tab_text = self.plot_tabs.pop('Welcome')
+            index = self.notebook.index(tab_text)
+            self.notebook.forget(index)
+            self.plot_objects.pop('Welcome')
 
     def reset_GUI(self):
         """ Reset the GUI to its initial state """
@@ -249,29 +277,46 @@ class GUI_Analysis:
         self.save_plots_var.set(False)
         self.cutoff_var.set(False)
 
-        # Reset file and calibration entries
+        # Reset file and calibration entries and button
+        self.calibration_method_check.state(['!selected'])
         self.entry_file_path.delete(0, tk.END)
         self.entry_linearization_path.delete(0, tk.END)
         self.entry_edge_pos.delete(0, tk.END)
         self.entry_mean_chord_length.delete(0, tk.END)
         self.entry_cal_factor.delete(0, tk.END)
+        self.entry_num_bins.delete(0, tk.END)
+        self.entry_cutoff.delete(0, tk.END)
 
         # Reset dropdown
         self.detector_var.set("silicon")
-        self.particle_var.set("carbon")
+        self.particle_var.set("proton")
 
         # Reset the output entry
         self.entry_out.delete(0, tk.END)
         
         # Lock entries
+        self.entry_cal_factor.config(state=tk.NORMAL)
         self.entry_linearization_path.config(state=tk.NORMAL)
         self.browse_linearization_path.config(state=tk.NORMAL)
         self.entry_edge_pos.config(state=tk.DISABLED)
         self.entry_mean_chord_length.config(state=tk.DISABLED)
         self.entry_num_bins.config(state=tk.NORMAL)
         self.entry_out.config(state=tk.DISABLED)
-        self.browse_out.config(state=tk.DISABLED)
+        self.browse_out_button.config(state=tk.DISABLED)
         self.entry_cutoff.config(state=tk.DISABLED)
+
+        # Select log binning
+        self.log_binning_check.state(['!selected'])
+        self.log_binning_check.config(state=tk.NORMAL)
+        self.entry_num_bins.config(state=tk.NORMAL)
+        self.log_binning_var.set(True)
+
+        # Deselect step plot
+        self.step_var.set(False)
+
+        # Deselect plot output
+        self.save_plots_var.set(False)
+        self.check_out_entry()
 
         # Reset the plot tabs
         for tab_name in list(self.plot_tabs.keys()):
@@ -283,6 +328,9 @@ class GUI_Analysis:
         self.plot_objects = {}
         self.plot_tabs = {}
 
+        # Reset the buttons
+        self.run_button.config(state=tk.NORMAL)
+
         # Reset the canvas
         self.welcome_message()
 
@@ -293,10 +341,10 @@ class GUI_Analysis:
 
         if self.save_plots_var.get():
             self.entry_out.config(state=tk.NORMAL)
-            self.browse_out.config(state=tk.NORMAL)
+            self.browse_out_button.config(state=tk.NORMAL)
         else:
             self.entry_out.config(state=tk.DISABLED)
-            self.browse_out.config(state=tk.DISABLED)
+            self.browse_out_button.config(state=tk.DISABLED)
 
     def check_file_entry(self, *args):
         """ Lock input options for different file types """
@@ -307,15 +355,73 @@ class GUI_Analysis:
             # Disable the calibration entry if the condition is met
             self.entry_linearization_path.config(state=tk.DISABLED)
             self.browse_linearization_path.config(state=tk.DISABLED)
+            # Set calibration false and disable the calibration entries
+            self.calibration_method_check.state(['!selected'])
+            self.entry_edge_pos.config(state=tk.DISABLED)
+            self.entry_mean_chord_length.config(state=tk.DISABLED)
+
         elif ".Spe" in file_content.lower():
             # Enable the calibration entry if the condition is met
             self.entry_linearization_path.config(state=tk.NORMAL)
             self.browse_linearization_path.config(state=tk.NORMAL)
+
         elif ".root" in file_content.lower():
             # Disable the calibration entry if the condition is met
             self.entry_linearization_path.config(state=tk.DISABLED)
             self.browse_linearization_path.config(state=tk.DISABLED)
-    
+            # Activate chord_length entry and deactivate calibration factor entry
+            self.entry_mean_chord_length.config(state=tk.NORMAL)
+            self.entry_cal_factor.config(state=tk.DISABLED)
+
+        elif ".csv" in file_content.lower():
+            # Check if this is really microdosimetric data
+            with open(file_content, 'r') as f:
+                lines = f.readlines()
+                if not 'APFELmuS' in lines[0]:
+                    messagebox.showinfo("Error", "This is not an analyzed APFELmuS microdosimetric data file")
+                    raise ValueError("This is not an analyzed APFELmuS microdosimetric data file")
+                else:
+                    
+                    # Read and create object right away
+                    campaign = MicroDosimetry()
+                    campaign.read_file(file_content)
+                    self.meas_name = file_content.split(os.path.sep)[-1].split('/')[-1].split('.csv')[0]
+
+                    self.setup_csv_plot(campaign)
+                    
+                    # Plot the data
+                    self.plot_csv_data(campaign)
+
+    def setup_csv_plot(self, campaign):
+        self.entry_linearization_path.config(state=tk.DISABLED)
+        self.browse_linearization_path.config(state=tk.DISABLED)
+        self.entry_cal_factor.config(state=tk.DISABLED)
+        self.calibration_method_check.state(['!selected'])
+        self.entry_edge_pos.config(state=tk.DISABLED)
+        self.entry_mean_chord_length.config(state=tk.DISABLED)
+        self.cutoff_check.state(['!selected'])
+        self.entry_cutoff.config(state=tk.DISABLED)
+
+        self.log_binning_check.state(['!selected'])
+        self.log_binning_check.config(state=tk.DISABLED)
+        self.entry_num_bins.config(state=tk.DISABLED)
+        self.step_check.state(['!selected'])
+        self.step_check.config(state=tk.DISABLED)
+
+        # Set the detector and particle dropdowns to the values in the file
+        self.detector_var.set(campaign.measurements[self.meas_name].detector)
+        self.particle_var.set(campaign.measurements[self.meas_name].particle)
+
+        # Lock the run button
+        self.run_button.config(state=tk.DISABLED)
+
+        # Select the plot option specified in the y_axis
+        for i, option in enumerate(self.plot_options):
+            if campaign.measurements[self.meas_name].x_axis in ['ENERGY', 'CHANNEL']:
+                self.check_vars[0].set(True)
+            elif option in campaign.measurements[self.meas_name].y_axis:
+                self.check_vars[i].set(True)
+
     def toggle_cutoff(self):
         if self.cutoff_var.get():
             self.entry_cutoff.config(state=tk.NORMAL)
@@ -350,7 +456,13 @@ class GUI_Analysis:
 
     def browse_file(self):
         script_directory = os.path.dirname(os.path.abspath(__file__))
-        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("All files", "*.*"),("MCA files", "*.MCA"),("MAESTRO files", "*.Spe"),("ROOT files", "*.root")])
+        file_path = filedialog.askopenfilename(initialdir=script_directory,
+                                               filetypes=[("All files", "*.*"),
+                                                          ("MCA files", "*.MCA"),
+                                                          ("MAESTRO files", "*.Spe"),
+                                                          ("ROOT simulation data", "*.root"),
+                                                          ("Analyzed Microdosimetry data", "*.csv")])
+        
         self.entry_file_path.delete(0, tk.END)
         self.entry_file_path.insert(0, file_path)
 
@@ -384,9 +496,10 @@ class GUI_Analysis:
     def calibrate_specs(self, campaign):
         #Calibrate
         if self.extension == '.root':
+            Calibrate.get_chord_length(campaign.measurements[self.meas_name], 'slab', float(self.entry_mean_chord_length.get()), plot=False)
             Calibrate.lineal_energy_axis(campaign.measurements[self.meas_name], chord_length='mean')
+        
         if self.extension == '.MCA':
-
             if self.calibration_method_var.get():
                 if self.entry_mean_chord_length.get() == "":
                     raise ValueError("Mean chord length has to be specified")
@@ -434,9 +547,13 @@ class GUI_Analysis:
                 tab_text.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
 
                 print('\n-----------ENTERED PLOTTING---------------')
-                # Start fresh with the original spectrum - Shit performance but it works
-                Spectrum.retrieve_original_spectrum(campaign.measurements[self.meas_name])
                 
+                if self.extension == '.root':
+                    print('ROOT file')
+                else:
+                    # Start fresh with the original spectrum - Shit performance but it works
+                    Spectrum.retrieve_original_spectrum(campaign.measurements[self.meas_name])
+
                 if self.cutoff_var.get():
                     if self.entry_cutoff.get() == "Enter cutoff value":
                         raise ValueError("Cutoff value has to be specified")
@@ -493,11 +610,13 @@ class GUI_Analysis:
 
                 if index == 0:
                     scale = 'lin'
+                    xlim = [0, campaign.measurements[self.meas_name].num_channels]
                 else:
                     scale = 'log'
+                    xlim = [0.1, 1000]
 
                 Output.plot_single(campaign.measurements[self.meas_name], name=f'{self.meas_name}_{self.plot_options[index]}', output_path=output_path,
-                                   step=self.step_var.get(), mean=False, scale=scale,
+                                   step=self.step_var.get(), mean=False, scale=scale, xlim=xlim, 
                                    show_plot=False, gui=True, fig=fig, ax=ax)
              
                 toolbar = NavigationToolbar2Tk(canvas, tab_text, pack_toolbar=False)
@@ -542,7 +661,13 @@ class GUI_Analysis:
             FileTranslator.translate_MAESTRO_file(input_MAESTRO=self.datafile, input_linearization=self.entry_linearization_path.get(), output_path='temp', name=self.meas_name, info_dict=info_dict)
             self.extension = '.MCA' #The new extension
             campaign.read_file(f'temp/{self.meas_name}.MCA') #The new file
-        else:
+
+        elif self.extension == '.root':
+            if self.entry_mean_chord_length.get() == "":
+                raise ValueError("Mean chord length has to be specified")
+            campaign.read_file(self.datafile)
+        
+        elif self.extension == '.MCA':
             campaign.read_file(self.datafile)
 
         test = []
@@ -559,7 +684,5 @@ root = tk.Tk()
 app = GUI_Analysis(root)
 
 # Fixed Window size
-#root.geometry("1035x715")
-#root.resizable(False, False)
-
+root.resizable(False, False)
 root.mainloop()

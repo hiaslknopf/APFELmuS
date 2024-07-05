@@ -331,7 +331,7 @@ def csv_output(measurement, output_path, name=False):
             os.makedirs(output_path)
     
     with open(f'{output_path}/{name}.csv', 'w') as f:
-        f.write(f"MicroDosimetry suite output: {titles_dict[measurement.y_axis]}\n{measurement.particle} on {measurement.detector}\n{measurement.date}\n\n")
+        f.write(f"APFELmuS output: {titles_dict[measurement.y_axis]}\n{measurement.particle} on {measurement.detector}\n{measurement.date}\n\n")
         
         xlabel = labels_dict['x_labels'][measurement._x_axis]
         ylabel = labels_dict['y_labels'][measurement._y_axis]

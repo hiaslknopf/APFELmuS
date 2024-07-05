@@ -80,7 +80,7 @@ class MicroDosimetry():
             #Check if it is a uDos file
             with open(file, 'r') as f:
                 lines = f.readlines()
-                if 'MicroDosimetry' in lines[0]:
+                if 'APFELmuS' in lines[0]:
                     measurement.read_uDos_analysis(file)
                 else:
                     pass
@@ -486,7 +486,8 @@ class Measurement():
         x_axis, y_axis = self.__get_info_from_uDos_file(file)
         
         self._data = pd.read_csv(file, sep=';', skiprows=4, skipfooter=11, engine='python')
-        self._original_data = pd.DataFrame(data='This was created from an already analysed uDos file', index=[0], columns=['This was created from an already analysed uDos file'])
+        self._original_data = pd.DataFrame(data='This was created from an already analysed uDos file - There is no original data',
+                                           index=[0], columns=['This was created from an already analysed uDos file - There is no original data'])
         self._abs_filepath = file
 
         # Set x and y axis to standard format

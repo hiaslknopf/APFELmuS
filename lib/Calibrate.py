@@ -537,7 +537,7 @@ def lineal_energy_axis(measurement, chord_length:str='mean'):
         calc_chord_length = measurement.max_chord_length
 
     if measurement.x_axis != 'ENERGY':
-               raise ValueError('This manipulation only works for energy x-axis in keV')
+               raise ValueError(f'This manipulation only works for energy x-axis in keV - not {measurement.x_axis}')
     else:
         measurement.data[measurement.x_axis] = measurement.data[measurement.x_axis].divide(calc_chord_length)
         print('changed axis lineal')
