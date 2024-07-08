@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.fft import rfft, rfftfreq, irfft
 from sklearn.preprocessing import normalize
 
-""" Module for more experimental, advanced analysis methods not part of the standard workflow.
+""" Module for more experimental, advanced analysis ideas not part of the standard workflow.
     Take this with a grain of salt, there's some of half-baked stuff in here. """
 
 def remove_noise(measurement, background_measurement):

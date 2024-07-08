@@ -79,59 +79,29 @@ def __on_pick(event, graphs, fig):
 
     fig.canvas.draw()
 
-def get_mean_value(measurement):
-    """ Calculate mean value of a given spectrum via integration
+def means_from_fy(measurement):
+    """ Calculate y_F mean and y_D mean from an f(y) distribution
+        This is normalized by default to area=1 (even with cutoffs applied)
 
-    Warning: This is not yet implemented for all possible combinations and not tested!
-    
     Args:
         measurement: The spectrum to be analyzed
     Returns:
-        mean_F: Frequency mean value
-        mean_D: Dose mean value
+        y_F: Frequency mean value (keV/um)
+        y_D: Dose mean value (keV/um)
     """
+
+    # Check if lineal energy axis and f(y)
+    if measurement.x_axis != 'LINEAL ENERGY' or measurement.y_axis != 'f(y)':
+        raise ValueError('yf(y) and yd(y) can only be calculated from a normalized f(y) distribution')
+
 
     x = measurement.data[measurement.x_axis].to_numpy()
     y = measurement.data[measurement.y_axis].to_numpy()
 
-    if np.trapz(x*y, x=x, dx=1.0) == 1.0:
-        raise ValueError('The spectrum cannot be normalized when taking an average. The integral of the spectrum is 1.0. Please check the data.')
+    y_F = np.trapz(x*y, x=x, dx=1.0)
+    y_D = 1/y_F * np.trapz(x*x*y, x=x, dx=1.0)
 
-    if measurement.y_axis == 'f(y)':
-        mean_F = np.trapz(x*y, x=x, dx=1.0)
-        mean_D = np.trapz(x*x*y, x=x, dx=1.0) / mean_F
-    
-    elif measurement.y_axis == 'd(y)':
-        mean_F = 0.0
-        mean_D = np.trapz(x*y, x=x, dx=1.0)
-    
-    elif measurement.y_axis == 'yf(y)':
-        mean_F = np.trapz(y, x=x, dx=1.0)
-        mean_D = np.trapz(x*y, x=x, dx=1.0)
-    
-    elif measurement.y_axis == 'yd(y)':
-        mean_F = 0.0
-        mean_D = np.trapz(y, x=x, dx=1.0)
-        
-    if measurement.x_axis == 'ENERGY':
-        unit = 'keV'
-    elif measurement.x_axis == 'LINEAL ENERGY':
-        unit = 'keVµm$^{-1}$'
-    elif measurement.x_axis == 'CHANNEL':
-        unit = 'channels'
-    elif measurement.x_axis == 'LET':
-        unit = 'keVµm$^{-1}$'
-
-    if mean_F == 0.0:
-        print('Frequency mean value cannot be calculated from the given spectrum')
-    else:
-        print(f'Frequency mean value of {measurement.y_axis} = {mean_F: .3f} {unit}')
-    if mean_D == 0.0:
-        print('Dose mean value cannot be calculated from the given spectrum')
-    else:   
-        print(f'Dose mean value of {measurement.y_axis} = {mean_D: .3f} {unit}')
-
-    return mean_F, mean_D
+    return y_F, y_D
 
 def plot_single(measurement, name:str=False, output_path:str=False,
                 mean:float=False, step:bool=False, scale:str='log', xlim:list=[0.1, 1000],
