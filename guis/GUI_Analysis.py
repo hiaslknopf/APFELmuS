@@ -164,15 +164,42 @@ class GUI_Analysis:
         self.entry_num_bins.bind("<FocusIn>", self.clear_num_bins_placeholder)  # Clear placeholder on focus
         self.entry_num_bins.bind("<FocusOut>", self.restore_num_bins_placeholder)  # Restore placeholder if entry is empty
 
+        # Set xlim
+        self.xlim_var = tk.BooleanVar(value=False)
+        self.xlim_check = ttk.Checkbutton(self.frame_plot, text="Set x-axis limits (keV/um)", variable=self.xlim_var, command=self.toggle_xlim)
+        self.xlim_check.grid(row=10, column=0, sticky=tk.W)
+
+        # xlim entry two parts: from to
+        self.entry_xlim_from = ttk.Entry(self.frame_plot, textvariable=tk.StringVar(), state=tk.NORMAL)
+        self.entry_xlim_from.grid(row=10, column=1, sticky=tk.W)
+        self.entry_xlim_to = ttk.Entry(self.frame_plot, textvariable=tk.StringVar(), state=tk.NORMAL)
+        self.entry_xlim_to.grid(row=10, column=2, sticky=tk.W)
+
+        # Placeholder text for xlim entry
+        self.xlim_from_placeholder = 'From'
+        self.xlim_to_placeholder = 'To'
+
+        self.entry_xlim_from.insert(0, self.xlim_from_placeholder)
+        self.entry_xlim_from.bind("<FocusIn>", self.clear_xlim_placeholder)
+        self.entry_xlim_from.bind("<FocusOut>", self.restore_xlim_placeholder)
+
+        self.entry_xlim_to.insert(0, self.xlim_to_placeholder)
+        self.entry_xlim_to.bind("<FocusIn>", self.clear_xlim_placeholder)
+        self.entry_xlim_to.bind("<FocusOut>", self.restore_xlim_placeholder)
+
+        # Disable xlim entry
+        self.entry_xlim_from.config(state=tk.DISABLED)
+        self.entry_xlim_to.config(state=tk.DISABLED)
+    
         # Change to step plot
         self.step_var = tk.BooleanVar(value=False)
         self.step_check = ttk.Checkbutton(self.frame_plot, text="Step plot", variable=self.step_var)
-        self.step_check.grid(row=10, column=0, sticky=tk.W)
+        self.step_check.grid(row=11, column=0, sticky=tk.W)
 
         # Plot mean values
         self.plot_means_var = tk.BooleanVar(value=False)
         self.plot_means_check = ttk.Checkbutton(self.frame_plot, text="Plot mean values (y_F, y_D)", variable=self.plot_means_var)
-        self.plot_means_check.grid(row=11, column=0, sticky=tk.W)
+        self.plot_means_check.grid(row=12, column=0, sticky=tk.W)
         
     def create_output_widgets(self):
 
@@ -523,6 +550,32 @@ class GUI_Analysis:
             self.detector_dropdown.configure(state="disabled")
             self.material_dropdown.configure(state="disabled")
 
+    def toggle_xlim(self):
+        """ Check if the xlim entry should be enabled """
+
+        if self.xlim_var.get():
+            self.entry_xlim_from.config(state=tk.NORMAL)
+            self.entry_xlim_to.config(state=tk.NORMAL)
+        else:
+            self.entry_xlim_from.config(state=tk.DISABLED)
+            self.entry_xlim_to.config(state=tk.DISABLED)
+    
+    def clear_xlim_placeholder(self, event):
+        """ Clear the placeholder text when the field is clicked """
+
+        if self.entry_xlim_from.get() == self.xlim_from_placeholder:
+            self.entry_xlim_from.delete(0, tk.END)
+        if self.entry_xlim_to.get() == self.xlim_to_placeholder:
+            self.entry_xlim_to.delete(0, tk.END)
+    
+    def restore_xlim_placeholder(self, event):
+        """ Restore the placeholder text if the entry is empty """
+
+        if not self.entry_xlim_from.get():
+            self.entry_xlim_from.insert(0, self.xlim_from_placeholder)
+        if not self.entry_xlim_to.get():
+            self.entry_xlim_to.insert(0, self.xlim_to_placeholder)
+
     def clear_num_bins_placeholder(self, event):
         """ Clear the placeholder text when the field is clicked """
 
@@ -765,15 +818,19 @@ class GUI_Analysis:
                     Output.csv_output(campaign.measurements[self.meas_name], output_csv, name=f'{self.meas_name}_{self.plot_options[index]}')
                     if output_csv == "":
                         raise ValueError("Output path has to be specified")
-
-                # Choose the scale and limits for the x-axis
+                
+                # Set the x-axis limits (if selected)
                 if index == 0:
                     scale = 'lin'
                     xlim = [0, campaign.measurements[self.meas_name].num_channels]
                 else:
                     scale = 'log'
-                    xlim = [0.1, 1000]
-                
+                    if self.xlim_var.get():
+                        xlim = [float(self.entry_xlim_from.get()), float(self.entry_xlim_to.get())]
+                    else:
+                        xlim = [0.1, 1000]
+
+                # Display the mean values in the plot (if selected)
                 if self.plot_means_var.get() and index != 0:
                     # Plot the mean values
                     y_F = self.y_F
