@@ -391,6 +391,16 @@ class GUI_Analysis:
         self.step_check.config(state=tk.NORMAL)
         self.step_var.set(False)
 
+        # xlim values
+        self.xlim_check.config(state=tk.NORMAL)
+        self.xlim_var.set(False)
+        self.entry_xlim_from.config(state=tk.DISABLED)
+        self.entry_xlim_to.config(state=tk.DISABLED)
+        self.entry_xlim_from.delete(0, tk.END)
+        self.entry_xlim_to.delete(0, tk.END)
+        self.entry_xlim_from.insert(0, self.xlim_from_placeholder)
+        self.entry_xlim_to.insert(0, self.xlim_to_placeholder)
+
         # Mean values
         self.plot_means_check.config(state=tk.NORMAL)
         self.plot_means_var.set(False)
@@ -498,6 +508,9 @@ class GUI_Analysis:
         self.step_check.config(state=tk.DISABLED)
         self.plot_means_check.state(['!selected'])
         self.plot_means_check.config(state=tk.DISABLED)
+        self.xlim_check.state(['!selected'])
+        self.entry_xlim_from.config(state=tk.DISABLED)
+        self.entry_xlim_to.config(state=tk.DISABLED)
 
         # Lock the run button -> Plots the data automatically
         self.run_button.config(state=tk.DISABLED)
