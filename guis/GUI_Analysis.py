@@ -168,6 +168,11 @@ class GUI_Analysis:
         self.step_var = tk.BooleanVar(value=False)
         self.step_check = ttk.Checkbutton(self.frame_plot, text="Step plot", variable=self.step_var)
         self.step_check.grid(row=10, column=0, sticky=tk.W)
+
+        # Plot mean values
+        self.plot_means_var = tk.BooleanVar(value=False)
+        self.plot_means_check = ttk.Checkbutton(self.frame_plot, text="Plot mean values (y_F, y_D)", variable=self.plot_means_var)
+        self.plot_means_check.grid(row=11, column=0, sticky=tk.W)
         
     def create_output_widgets(self):
 
@@ -220,12 +225,13 @@ class GUI_Analysis:
         #-----------------------Plot window----------------------------#
         ################################################################
 
-        # Create notebook for tabs
-        self.notebook = ttk.Notebook(root)
-        self.notebook.grid(row=0, column=1, rowspan=12, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
-        
+        # Frame for right side
         self.frame_plot_window = ttk.Frame(root)
-        self.frame_plot_window.grid(row=0, column=3, rowspan=12, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
+        self.frame_plot_window.grid(row=0, column=1, rowspan=12, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
+
+        # Create notebook for tabs
+        self.notebook = ttk.Notebook(self.frame_plot_window)
+        self.notebook.grid(row=0, column=0, rowspan=12, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
 
         # Create a Figure and Axes for the plot
         self.fig, self.ax = plt.subplots(figsize=(6, 4))
@@ -234,7 +240,20 @@ class GUI_Analysis:
  
         # Initialize the check_vars and plot_tabs attributes
         self.plot_objects = {}
-        self.plot_tabs = {}       
+        self.plot_tabs = {}
+
+        # Empty row
+        ttk.Label(self.frame_plot_window, text="").grid(row=1, column=0, sticky=tk.W)
+
+        # Create textbox widget below the notebook with scrollbar for longer texts
+        self.info_textbox = tk.Text(self.frame_plot_window, width=50, height=10, wrap=tk.WORD, bg="white")
+        scrollbar = ttk.Scrollbar(self.frame_plot_window, orient=tk.VERTICAL, command=self.info_textbox.yview)
+        self.info_textbox.config(yscrollcommand=scrollbar.set)
+        scrollbar.grid(row=20, column=1, padx=0, pady=10, sticky=tk.W+tk.E+tk.N+tk.S, rowspan=12)
+        self.info_textbox.grid(row=20, column=0, rowspan=12, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
+
+        self.initial_text = "Welcome to the APFELmuS Spectrum Viewer\nPlease select your options on the left ..."
+        self.info_textbox.insert(1.0, self.initial_text)
 
 ################################################################
 #----------------------GUI FUNCTIONALITY-----------------------#
@@ -261,7 +280,7 @@ class GUI_Analysis:
 
         # Plot the data
         Output.plot_single(campaign.measurements[self.meas_name], name=f'{self.meas_name}',
-                                   step=self.step_var.get(), mean=False, 
+                                   step=self.step_var.get(), y_F=False, y_D=False,
                                    show_plot=False, gui=True, fig=fig, ax=ax)
              
         toolbar = NavigationToolbar2Tk(canvas, tab_text, pack_toolbar=False)
@@ -323,6 +342,10 @@ class GUI_Analysis:
         # Deselect step plot
         self.step_var.set(False)
 
+        # Reset text box
+        self.info_textbox.delete(1.0, tk.END)
+        self.info_textbox.insert(tk.END, self.initial_text)
+
         # Deselect plot and csv output
         self.entry_plot_out.delete(0, tk.END)
         self.entry_csv_out.delete(0, tk.END)
@@ -337,6 +360,14 @@ class GUI_Analysis:
             index = self.notebook.index(tab_text)
             self.notebook.forget(index)
         
+        # Activate step plot
+        self.step_check.config(state=tk.NORMAL)
+        self.step_var.set(False)
+
+        # Mean values
+        self.plot_means_check.config(state=tk.NORMAL)
+        self.plot_means_var.set(False)
+
         # Reset the plot objects
         self.plot_objects = {}
         self.plot_tabs = {}
@@ -438,6 +469,8 @@ class GUI_Analysis:
         self.entry_num_bins.config(state=tk.DISABLED)
         self.step_check.state(['!selected'])
         self.step_check.config(state=tk.DISABLED)
+        self.plot_means_check.state(['!selected'])
+        self.plot_means_check.config(state=tk.DISABLED)
 
         # Lock the run button -> Plots the data automatically
         self.run_button.config(state=tk.DISABLED)
@@ -449,11 +482,14 @@ class GUI_Analysis:
         self.check_plot_out_entry()        
 
         # Select the plot option specified in the y_axis
+        # Disable all other options
         for i, option in enumerate(self.plot_options):
             if campaign.measurements[self.meas_name].x_axis in ['ENERGY', 'CHANNEL']:
                 self.check_vars[0].set(True)
             elif option in campaign.measurements[self.meas_name].y_axis:
                 self.check_vars[i].set(True)
+            else:
+                self.check_vars[i].set(False)
 
     def toggle_cutoff(self):
         """ Check if a channel cutoff should be applied """
@@ -559,12 +595,20 @@ class GUI_Analysis:
             index = self.notebook.index(tab_text)
             self.notebook.forget(index)
         
+        # Reset RUN button
+        self.run_button.config(state=tk.NORMAL)
+        
         self.plot_objects = {}
         self.plot_tabs = {}
 
         plt.close('all')
 
         self.welcome_message()
+
+        # Change textbox
+        message = "Closed plots. Ready to start again ..."
+        self.info_textbox.delete(1.0, tk.END)
+        self.info_textbox.insert(1.0, message)
 
 #################################################################
 #----------------------PLOTTING FUNCTIONALITY-------------------#
@@ -574,7 +618,7 @@ class GUI_Analysis:
         """ Calibrate spectra according to the selected method and parameters """
 
         # Option ROOT: Attach a chord length and transform to a lineal energy axis
-        if self.extension == '.root':
+        if self.extension == '.root' and campaign.measurements[self.meas_name].x_axis == 'ENERGY':
             Calibrate.get_chord_length(campaign.measurements[self.meas_name], 'slab', float(self.entry_mean_chord_length.get()), plot=False)
             Calibrate.lineal_energy_axis(campaign.measurements[self.meas_name], chord_length='mean')
         
@@ -589,7 +633,7 @@ class GUI_Analysis:
                 
                 # Calibration with edge + chord length
                 Calibrate.get_chord_length(campaign.measurements[self.meas_name], 'slab', float(self.entry_mean_chord_length.get()), plot=False) 
-                ymax, _ = Calibrate.get_stopping_power(campaign.measurements[self.meas_name], chord_length='mean', database='SRIM', precision=0.01, plot=False)
+                ymax, _, _ = Calibrate.get_stopping_power(campaign.measurements[self.meas_name], chord_length='mean', database='SRIM', precision=0.01, plot=False)
                 Calibrate.scale_energy_axis(campaign.measurements[self.meas_name], float(self.entry_edge_pos.get()), ymax, energy_axis='lineal', chord_length='mean')
             
             else:
@@ -602,6 +646,23 @@ class GUI_Analysis:
                 
                 Calibrate.scale_energy_axis_with_factor(campaign.measurements[self.meas_name], cal_factor)
     
+    def calculate_means(self, campaign):
+        """ Calculate the mean values for the selected representations """
+
+        if self.plot_means_var.get():
+            Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+            Spectrum.probability_density(campaign.measurements[self.meas_name])
+
+            self.y_F, self.y_D = Output.means_from_fy(campaign.measurements[self.meas_name])
+
+            # Return the proper spectrum for further plotting
+            Spectrum.retrieve_original_spectrum(campaign.measurements[self.meas_name])
+
+            if self.cutoff_var.get():
+                    Spectrum.cutoff(campaign.measurements[self.meas_name], channels=int(self.entry_cutoff.get()))
+  
+            self.calibrate_specs(campaign)
+
     def setup_plot(self, tab_name, tab_text):
         """ Create a new tab for the plot and set up the canvas """
 
@@ -617,6 +678,11 @@ class GUI_Analysis:
         fig, ax = plt.subplots()
         canvas = FigureCanvasTkAgg(fig, master=tab_text)
         canvas.get_tk_widget().grid(row=0, column=0, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
+
+        # Include space for the toolbar
+        #fig.tight_layout()
+        fig.subplots_adjust(top=0.9)
+        fig.subplots_adjust(bottom=0.1)     
 
         return fig, ax, canvas
 
@@ -636,20 +702,21 @@ class GUI_Analysis:
                 print('Plotting index ' + str(index) + ' ' + str(option) + '\n')
                 
                 # Start fresh every time with the original spectrum - Shit performance but less errors
-                if self.extension == '.root':
-                    print('ROOT file') # There is no raw data (already calibrated)
-                else:
-                    Spectrum.retrieve_original_spectrum(campaign.measurements[self.meas_name])
+                Spectrum.retrieve_original_spectrum(campaign.measurements[self.meas_name])
 
                 # Cut off spectrum (if selected)
                 if self.cutoff_var.get():
                     if self.entry_cutoff.get() == "Enter cutoff value":
                         raise ValueError("Cutoff value has to be specified")
-                    Spectrum.cutoff(campaign.measurements[self.meas_name], int(self.entry_cutoff.get()))
+                    Spectrum.cutoff(campaign.measurements[self.meas_name], channels=int(self.entry_cutoff.get()))
 
                 # Calibrate spectra (But the original ADC channels)
                 if index != 0:
                     self.calibrate_specs(campaign)
+
+                # Calculate mean values if not deselected
+                if self.plot_means_var.get() and index !=0:
+                    self.calculate_means(campaign)
 
                 # Calculate selected representations
                 if index == 1: #f(y)
@@ -706,10 +773,19 @@ class GUI_Analysis:
                 else:
                     scale = 'log'
                     xlim = [0.1, 1000]
+                
+                if self.plot_means_var.get() and index != 0:
+                    # Plot the mean values
+                    y_F = self.y_F
+                    y_D = self.y_D
+                
+                else:
+                    y_F = False
+                    y_D = False
 
                 # Finally, plot the data
                 Output.plot_single(campaign.measurements[self.meas_name], name=f'{self.meas_name}_{self.plot_options[index]}', output_path=output_path,
-                                   step=self.step_var.get(), mean=False, scale=scale, xlim=xlim, 
+                                   step=self.step_var.get(), y_F=y_F, y_D=y_D, scale=scale, xlim=xlim, 
                                    show_plot=False, gui=True, fig=fig, ax=ax)
              
                 toolbar = NavigationToolbar2Tk(canvas, tab_text, pack_toolbar=False)
@@ -744,7 +820,17 @@ class GUI_Analysis:
         campaign = MicroDosimetry()
         self.datafile = self.entry_file_path.get()
         self.filename, self.extension = os.path.splitext(os.path.normpath(self.datafile))
-        self.meas_name = self.filename.split(os.path.sep)[-1].split(self.extension)[0]
+        try:
+            self.meas_name = self.filename.split(os.path.sep)[-1].split(self.extension)[0]
+        except:
+            messagebox.showinfo("Error", "No file selected or format corrupted")
+            raise ValueError("No file selected or format corrupted")
+
+        # Write message to the textbox
+        self.info_textbox.delete(1.0, tk.END)
+        message_run = "Calculating the selected plots. Please wait ...\n "
+        self.info_textbox.insert(1.0, message_run)
+        self.info_textbox.update()
 
         # Option .Spe: Translate MAESTRO file to MCA file and add metainformation
         if self.extension == '.Spe':
@@ -777,9 +863,40 @@ class GUI_Analysis:
             for i, option in enumerate(self.plot_options):
                 self.show_plot(i, option, campaign)
         
+        # Write the output of the analysis to the textbox
+        self.write_output()
+        
+    def write_output(self):
+        """ Write the output of the analysis to the textbox """
+
+        l1 = f"Analysis completed: {self.meas_name}"
+        if self.plot_means_var.get():
+            l2 = f"Mean values y_F = {self.y_F:.3f} keV/um, y_D = {self.y_D:.3f} keV/um"
+        else:
+            l2 = ""
+        l3 = f"Selected plots: {', '.join([option for i, option in enumerate(self.plot_options) if self.check_vars[i].get()])}\n"
+        l4 = "Analysis choices:"
+        l5 = f"Log binning: {self.log_binning_var.get()}"
+        l6 = f"Step plot: {self.step_var.get()}"
+        if self.cutoff_var.get():
+            l7 = f"Cutoff value: {self.entry_cutoff.get()}"
+        else:
+            l7 = "No cutoff"
+        if self.save_plots_var.get():
+            l8 = f"Save plots: {self.entry_plot_out.get()}"
+        else:  
+            l8 = "No plot output"
+        if self.save_csv_var.get():
+            l9 = f"Save csv: {self.entry_csv_out.get()}"
+        else:
+            l9 = "No csv output"
+        
+        self.info_textbox.delete(1.0, tk.END)
+        self.info_textbox.insert(1.0, f"{l1}\n{l2}\n{l3}\n{l4}\n{l5}\n{l6}\n{l7}\n{l8}\n{l9}")
+        
 root = tk.Tk()
 app = GUI_Analysis(root)
 
 # Fixed Window size
-root.resizable(False, False)
+#root.resizable(False, False)
 root.mainloop()

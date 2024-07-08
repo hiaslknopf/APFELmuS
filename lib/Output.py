@@ -104,7 +104,7 @@ def means_from_fy(measurement):
     return y_F, y_D
 
 def plot_single(measurement, name:str=False, output_path:str=False,
-                mean:float=False, step:bool=False, scale:str='log', xlim:list=[0.1, 1000],
+                y_F:float=False, y_D:float=False, step:bool=False, scale:str='log', xlim:list=[0.1, 1000],
                 show_plot:bool=True, interactive:bool=True, gui=False, fig=None, ax=None):
     """ View and save a single spectrum plot
 
@@ -112,7 +112,8 @@ def plot_single(measurement, name:str=False, output_path:str=False,
         measurement: The spectrum to be analyzed
         name: Title and filename for the plot (Default: Spectrum name)
         output_path: For the figure to be saved (optional)
-        mean: Include a mean value in the plot (optional: float)
+        y_F: Frequency mean value in keV/um (optional)
+        y_D: Dose mean value in keV/um (optional)
         step: Use step plot instead of line plot (optional, default=False)
         scale: Scaling of x-axis (optional: 'lin', default: 'log')
         show_plot: Immediately show test plot (optional, default=True)
@@ -161,9 +162,12 @@ def plot_single(measurement, name:str=False, output_path:str=False,
     else:
         ax.set_ylim(0.0,1.1*max(y))
     
-    if mean:
-        mean = ax.axvline(mean, color='blue', linestyle='--', label=labels_dict['mean_labels'][measurement._y_axis])
-        lines.append(mean)
+    if y_F:
+        y_F_plot = ax.axvline(y_F, color='blue', linestyle='--', label='Frequency mean y_F', alpha=0.75)
+        lines.append(y_F_plot)
+    if y_D:
+        y_D_plot = ax.axvline(y_D, color='forestgreen', linestyle='--', label='Dose mean y_D', alpha=0.75)
+        lines.append(y_D_plot)
 
     ax.set_xlabel(labels_dict['x_labels'][measurement._x_axis])
     ax.set_ylabel(labels_dict['y_labels'][measurement._y_axis])

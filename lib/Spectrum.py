@@ -678,11 +678,16 @@ def retrieve_original_spectrum(measurement):
         measurement: The spectrum to be analyzed
     """
 
+    # New dataframe
     measurement.data = pd.DataFrame()
 
     if measurement.gain == 'SIMULATION': #for ROOT files
         measurement.x_axis = 'ENERGY'
         measurement.y_axis = 'COUNTS'
+
+        # Create new columns first (Else it will not work with the ROOT files)
+        measurement.data[measurement.x_axis] = np.zeros(len(measurement.original_data[measurement.x_axis]))
+        measurement.data[measurement.y_axis] = np.zeros(len(measurement.original_data[measurement.y_axis]))
 
         measurement.data[measurement.x_axis].update(measurement.original_data[measurement.x_axis])
         measurement.data[measurement.y_axis].update(measurement.original_data[measurement.y_axis])

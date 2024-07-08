@@ -8,8 +8,6 @@ if projekt_dir not in sys.path:
 from MicroDosimetry import MicroDosimetry
 from lib import Calibrate, Spectrum, Output
 
-import numpy as np
-
 """ Calculate f(y) to yd(y) distribution and plot spectrum + mean values """
 
 plot = True
@@ -47,5 +45,4 @@ print(f'Frequency mean y_F:  {y_F:.2f} keV/um')
 print(f'Dose mean y_D: {y_D:.2f} keV/um')
 
 if plot:
-    Output.plot_single(campaign1.measurements['exp_carbon_data_1'], 'f(y) with y_F', mean=y_F)
-    Output.plot_single(campaign1.measurements['exp_carbon_data_1'], 'f(y) with y_D', mean=y_D)
+    Output.plot_single(campaign1.measurements['exp_carbon_data_1'], y_F=y_F, y_D=y_D)
