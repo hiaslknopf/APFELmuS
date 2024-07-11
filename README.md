@@ -1,7 +1,7 @@
 ### APFELmuS - A Python Framework For the EvaLuation of Microdosimetric Spectra
-This is an analysis toolkit for evaluating microdosimetric data (pulse-height-spectra & Geant4/GATE simulation data). It can be either used like a Python package by importing its functions into your own code or with some GUIs.
+This is an analysis toolkit for evaluating microdosimetric data (pulse-height-spectra & Geant4/GATE simulation data). It can be either used like a Python package by importing its functions into your own code or accessed via some GUIs.
 
-Currently, only ORTEC MAESTRO .Spe files and simulation ROOT files are supported, but other read functions can be easily implemented. This is a work in progress and in its early stages. Theres still a lot missing, its a complete mess and very unstable ...
+Currently, only ORTEC MAESTRO .Spe files and ROOT files from Monte Carlo simulations are supported, but other read functions can be easily implemented. This is a work in progress and in its early stages. Theres still a lot missing, its a complete mess and very unstable ...
 
 # Structure
 
@@ -11,17 +11,19 @@ Currently, only ORTEC MAESTRO .Spe files and simulation ROOT files are supported
 
 
  - `/lib`: Containing collections of methods and tools to interact with the spectra
-    - Linearization.py: For creating linearization curves for the spectra from calibration data (Gain + Electronics)
-    - FileTranslator.py: For converting the original spectrum files into the package format .MCA (By attaching a linearization + Information)
-    - Calibrate.py: For operations concerning the energy axis calibration
-    - Spectrum.py: For different operations on the spectra (x and y axis)
+    - Linearization.py: For creating linearization curves (Gain + Electronics) for the spectra from measured data 
+    - FileTranslator.py: For converting the original spectrum files (MAESTRO .Spe) into the APFELmuS format .MCA (By attaching a linearization + Metainformation) or reading other information
+    - Calibrate.py: For operations concerning the energy axis calibration (x-axis)
+    - Spectrum.py: For different operations on the spectra (x and y axes)
     - Output.py: Some simple output functions for visualizing and storing the data for later analysis
+    - Advanced.py: For more advanced and experimental operations on the spectra (very experimental!!!)
 
  - `/guis`: Containing some simple GUIs for visualizing the data
-    - GUI_Analysis.py: Single spectrum analysis for a quick preview of some data
-    - GUI_Calibration.py: Performing an edge calibration using a spectrum
-    - GUI_Linearization.py: Creating a linearization curve from calibration data
-    - GUI_FileTranslator.py: Converting spectrum files into the package format .MCA (Attaching linearization)
+    - GUI_Analysis.py: Single spectrum analysis for a quick preview of microdosimetric data
+    - GUI_Calibration.py: Performing an edge calibration using a measured spectrum
+    - GUI_Linearization.py: Creating a linearization curve from measured data
+    - GUI_FileTranslator.py: Converting raw spectrum files into the APFELmuS format .MCA (Attaching linearization)
+    - GUI_Merge_Spectra.py: For merging measurements of different gains into one spectrum (very experimental!!!)
 
  - `/tests`: Containing a collection of testfiles and testdata for checking the functionality of the package
 
@@ -29,11 +31,18 @@ Currently, only ORTEC MAESTRO .Spe files and simulation ROOT files are supported
 
     ![Structure Diagram](docs/structure_diagram.svg)
 
-# How to use this?
+The package is designed to be used in your own python environment. The user can either use the provided GUIs or import the functions into their own code similar to using python packages. The GUIs are a practical way to quickly inspect data, but the real power lies in using the functions in your own code. Theres no magic happening, its very basic operations on pandas dataframes. The idea is to provide a structured way to do this and save time by not writing the same code over and over.<br>
 
-The package is designed to be used in a python environment. The user can either use the provided GUIs or import the functions into their own code. The GUIs are a practical way to quickly visualize data. The real power is in using the functions in your own code. Theres no magic happening, its basic operations on dataframes, the idea is to provide a structured way to do this and save the user time in writing the same code over and over.<br>
+## Requirements
+- Python 3.6 or higher
+- Standard library packages: numpy, math, pandas, scipy, matplotlib, ctypes, os, sys
+- tkinter (for the GUIs)
+- uproot (for reading ROOT files)
+If anything doesn't work, try updating the packages, e.g. `pip install --upgrade numpy`
 
-1. Your analysis folder does not have to be in the same directory as the package, just be sure to import it correctly.
+## How to use this?
+
+1. Download APFELmuS and store it somewhere you find it. The data you're analysing does not have to be in the same directory as the package, just be sure to import everything correctly (see templates).
 2. Set up a python script and import the necessary parts:<br>
     ```
         from MicroDosimetry import MicroDosimetry
@@ -42,31 +51,31 @@ The package is designed to be used in a python environment. The user can either 
         from lib import FileTranslator, Linearization
     ```
 
-    If you want to read in data, you have to include `MicroDosimetry`. The other parts are optional and can be imported as needed.
+    If you want to read in data, you have to include `MicroDosimetry`. The other parts are optional and can be imported if some of their functions are needed.
 
-3. Make sure your data is already stored in the correct format. This means as an .MCA file with a linearization and some basic information attached. If not, use the `FileTranslator.py` to convert it. This step can be skipped for simulation data, it already is "calibrated"
+3. Make sure your data is already stored in the correct format. This means as an .MCA file with a linearization and some basic information attached. If this is not the case, use the `FileTranslator.py` to convert it. This step can be skipped for simulation data, it already is "calibrated" with an energy axis. APFELmuS can only read .MCA, .root and already analysed .csv files (`Output.csv_output()`)
 
-4. An analysis can now be started by creating a MicroDosimetry object, e.g. `campaign1 = MicroDosimetry()`
+4. An analysis can now be started by creating a MicroDosimetry object, e.g. `campaign1 = MicroDosimetry()`. This contains all the data of all spectra of one campaign. The user can create as many campaigns as they like in whichever way they like. Make up your own system to keep track of the data.
 
 5. Data can be read in using the read functions. There are two possibilities:
     - the `read_folder` method: `campaign1.read_folder('yourfolder/')`
     - the `read_file` method: `campaign1.read_file('yourfolder/yourfile.MCA')`
 
-    This fills the `measurements` dictionary associated with one campaign (attribute of the MicroDosimetry object) with `Measurement` objects, each containing one spectrum and the associated metainformation.<br>
+    This fills the `measurements` dictionary in the associated with one campaign (attribute of the MicroDosimetry object) with `Measurement` objects, each containing one spectrum and some associated metainformation.<br>
 
-    The user can now access this information via the filename of the datafile: `campaign1.measurements['yourfile']`. The data itself is stored as a pandas dataframe in `campaign1.measurements['testfile'].data`. The other attributes can be accessed similarly.<br>
+    The user can now access this information via the filename of the original datafile: `campaign1.measurements['yourfile']`. The data itself is always stored as a pandas dataframe in `campaign1.measurements['testfile'].data`. The other attributes can be accessed similarly.<br>
 
-6. Operations can now performed on the Measurement objects. The content changes when the function is called, e.g: ``Spectrum.cutoff(campaign1.measurements['testfile'], channels=100)``.
+6. Operations can now performed on the Measurement objects. The content changes as soon as the function is called, e.g: `Spectrum.cutoff(campaign1.measurements['testfile'], channels=100)`.
 
     With some exceptions these functions have no return values. The general structure of a Measurement object does not change throughout, just the information attached. The original pulse height spectrum can always be retained, as it is stored in `campaign1.measurements['testfile'].original_data`.
 
-7. The analysis can be perform in whichever way the user pleases. Impossible operations result in an error message. The order of the manipulations is arbitrary within certain bounds: Have a look onto the workflow attached to get a feel for the operation.<br>
+7. The analysis can be performed in whichever way the user pleases. Impossible operations result in an error message (hopefully). The order of the manipulations is arbitrary within certain logical bounds.<br>
 
-    A plot or csv output of the data is possible at any step. For the Calibration and Linearization functions, it is also possible to view plots for verification.
+    A plot or csv output of the data is possible at any step. Either for a single spectrum or the whole campaign. For the Calibration and Linearization functions, it is also possible to view plots for verification.
 
 The idea behind this toolkit is to allow for a comprehensible analysis of microdosimetric data. The user can easily access the data and perform operations on it. The data is stored in a structured way and that be easily accessed. The user can write python scripts to analyze several measurement campaigns, simulations or datasets in a structured way. The output can be stored and further processed elsewhere.<br>
 
-In the end, maybe just have a look at the test scripts and templates and the comments in the source code. This toolkit is to be continuosly extended should the need for new methods arise. Critique and input is very welcome...
+In the end, maybe just have a look at the test scripts and templates and the comments in the source code. This toolkit is to be continuosly extended should the need for new methods arise. Critique and input are very welcome...
 
 # Basic Workflow
 
@@ -74,9 +83,9 @@ The basic workflow from a measured pulse height spectrum to a microdosimetric yd
 
 #### 1. Attach a Linearization
 
-The idea is to know which ADC channel corresponds to which pulse height. This way, you can compare different spectra taken with different readout chains with each other, the gain and electronic nonlinearities are included and considered in the analysis.
+You need to know which ADC channel corresponds to which pulse height measured. This way, you can compare different spectra taken with different readout chains with each other, the gain and electronic nonlinearities are automatically included and considered in the analysis.
 
-This can be measured with a pulser on the Amplifier Test input. Send in pulses with a steep flank (preferably sawtooth) of a known voltage (calibrated pulser). From the resulting spectrum, create the CHANNEL to mV correspondence using ``Linearization.get_linearization()``. This saves a calibration file (.csv) which can then be attached to the spectra in a .MCA file.
+This can be measured with a pulser/waveform generator on the Amplifier Test input. Send in pulses with a steep flank (preferably sawtooth) of a known voltage (calibrated pulser). From the resulting spectrum, create the CHANNEL to mV correspondence using ``Linearization.get_linearization()``. This saves a calibration file (.csv) which can then be attached to the spectra in a .MCA file.
 
 #### 2. Calibrate the Energy Axis
 
@@ -86,7 +95,7 @@ https://doi.org/10.1063/1.4812920
 
 #### 3. Do some maths
 
-Now you can calculate the right PDF from the calibrated spectrum.
+Now you can calculate the right representation from the calibrated spectrum and make some nice plots.
 
 # Overview of file types and naming convention
 
@@ -96,9 +105,9 @@ As it might be a bit confusing for new users, here's an overview of the file typ
   * .Spe (MAESTRO files)
     ASCII int for all channels
   * .root (GATE/Geant4 output)
-    Has to contain a `Hits/edep` tree
+    Has to contain a `Hits/edep` tree storing the energy deposition in the detector as single events
 * Spectrum files for the analysis:
-  * .MCA (Created from MAESTRO files or similar)
+  * .MCA (Created from MAESTRO .Spe files or similar)
     Contain the linearization of a given measurement
     Can be created using the `FileTranslator`
   * .root
