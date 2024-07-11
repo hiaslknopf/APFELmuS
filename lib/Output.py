@@ -92,7 +92,7 @@ def means_from_fy(measurement):
 
     # Check if lineal energy axis and f(y)
     if measurement.x_axis != 'LINEAL ENERGY' or measurement.y_axis != 'f(y)':
-        raise ValueError('yf(y) and yd(y) can only be calculated from a normalized f(y) distribution')
+        raise ValueError('This function can only act on f(y) distributions')
 
 
     x = measurement.data[measurement.x_axis].to_numpy()
@@ -100,6 +100,29 @@ def means_from_fy(measurement):
 
     y_F = np.trapz(x*y, x=x, dx=1.0)
     y_D = 1/y_F * np.trapz(x*x*y, x=x, dx=1.0)
+
+    return y_F, y_D
+
+def means_from_dy(measurement):
+    """ Calculate y_F mean and y_D mean from a d(y) distribution
+        This is normalized by default to area=1 (even with cutoffs applied)
+
+    Args:
+        measurement: The spectrum to be analyzed
+    Returns:
+        y_F: Frequency mean value (keV/um)
+        y_D: Dose mean value (keV/um)
+    """
+
+    # Check if lineal energy axis and d(y)
+    if measurement.x_axis != 'LINEAL ENERGY' or measurement.y_axis != 'd(y)':
+        raise ValueError('This function can only act on d(y) distributions')
+
+    x = measurement.data[measurement.x_axis].to_numpy()
+    y = measurement.data[measurement.y_axis].to_numpy()
+
+    y_F = np.trapz(y, x=x, dx=1.0)
+    y_D = 1/y_F * np.trapz(x*y, x=x, dx=1.0)
 
     return y_F, y_D
 
