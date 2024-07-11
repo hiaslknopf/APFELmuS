@@ -101,19 +101,27 @@ class GUI_Analysis:
         self.entry_file_path["textvariable"] = self.file_var
 
         # Two dropdown menus for info_dict detector and material
-        ttk.Label(self.frame_file_cal, text="Detector:").grid(row=7, column=0, sticky=tk.W)
+        ttk.Label(self.frame_file_cal, text=" Detector:").grid(row=7, column=0, sticky=tk.W)
         self.detector_var = tk.StringVar()
         self.detector_var.set("silicon")
         self.detector_dropdown = ttk.OptionMenu(self.frame_file_cal, self.detector_var, "silicon", "silicon", "diamond", "sic")
         self.detector_dropdown.configure(state="disabled")
         self.detector_dropdown.grid(row=7, column=1, sticky=tk.W)
 
-        ttk.Label(self.frame_file_cal, text="Particle:").grid(row=8, column=0, sticky=tk.W)
+        ttk.Label(self.frame_file_cal, text=" Particle:").grid(row=8, column=0, sticky=tk.W)
         self.particle_var = tk.StringVar()
         self.particle_var.set("proton")
         self.material_dropdown = ttk.OptionMenu(self.frame_file_cal, self.particle_var, "proton", "proton", "carbon", "helium")
         self.material_dropdown.configure(state="disabled")
         self.material_dropdown.grid(row=8, column=1, sticky=tk.W)
+
+        # Another dropdown for the database selection
+        ttk.Label(self.frame_file_cal, text=" Database:").grid(row=9, column=0, sticky=tk.W)
+        self.database_var = tk.StringVar()
+        self.database_var.set("ICRU")
+        self.database_dropdown = ttk.OptionMenu(self.frame_file_cal, self.database_var, "ICRU", "ICRU", "NIST", "SRIM")
+        self.database_dropdown.configure(state="disabled")
+        self.database_dropdown.grid(row=9, column=1, sticky=tk.W)
 
         # Empty line
         ttk.Label(self.frame_file_cal, text="").grid(row=9, column=0, columnspan=3, sticky=tk.W)
@@ -347,6 +355,7 @@ class GUI_Analysis:
         # Reset dropdown
         self.detector_var.set("silicon")
         self.particle_var.set("proton")
+        self.database_var.set("ICRU")
         
         # Lock entries
         self.entry_cal_factor.config(state=tk.NORMAL)
@@ -447,6 +456,10 @@ class GUI_Analysis:
             # Lock linearization entry
             self.entry_linearization_path.config(state=tk.DISABLED)
             self.browse_linearization_path.config(state=tk.DISABLED)
+
+            # Lock detector and particle dropdowns
+            self.detector_dropdown.configure(state="disabled")
+            self.material_dropdown.configure(state="disabled")
 
         # Option 2: Raw .Spe file (MAESTRO)
         elif ".Spe" in file_content.lower():
@@ -554,14 +567,24 @@ class GUI_Analysis:
             self.entry_edge_pos.config(state=tk.NORMAL)
             self.entry_mean_chord_length.config(state=tk.NORMAL)
             self.entry_cal_factor.config(state=tk.DISABLED)
-            self.detector_dropdown.configure(state="enabled")
-            self.material_dropdown.configure(state="enabled")
+
+            # Check if file is .MCA
+            if ".MCA" in self.entry_file_path.get().upper():
+                self.detector_dropdown.configure(state="disabled")
+                self.material_dropdown.configure(state="disabled")
+                self.database_dropdown.configure(state="enabled")
+            else:
+                self.detector_dropdown.configure(state="enabled")
+                self.material_dropdown.configure(state="enabled")
+                self.database_dropdown.configure(state="enabled")
+
         else:
             self.entry_edge_pos.config(state=tk.DISABLED)
             self.entry_mean_chord_length.config(state=tk.DISABLED)
             self.entry_cal_factor.config(state=tk.NORMAL)
             self.detector_dropdown.configure(state="disabled")
             self.material_dropdown.configure(state="disabled")
+            self.database_dropdown.configure(state="disabled")
 
     def toggle_xlim(self):
         """ Check if the xlim entry should be enabled """
@@ -697,9 +720,24 @@ class GUI_Analysis:
                 if self.entry_edge_pos.get() == "":
                     raise ValueError("Calibration edge has to be specified")
                 
+                database = self.database_var.get()
+                # Check if this combination is possible and set value to SRIM (exists for all detectors)
+                if database == 'NIST' and self.detector_var.get() == 'sic':
+                    messagebox.showinfo("Selected atabase does not exists", "NIST database not available for SiC detectors - Set to SRIM calculation")
+                    database = 'SRIM'
+                    self.database_var.set('SRIM')
+                if database == 'ICRU' and self.detector_var.get() == 'sic':
+                    messagebox.showinfo("Selected atabase does not exists", "ICRU database not available for SiC detectors - Set to SRIM calculation")
+                    database = 'SRIM'
+                    self.database_var.set('SRIM')
+                if database == 'NIST' and self.particle_var.get() == 'carbon':
+                    messagebox.showinfo("Selected atabase does not exists", "NIST database is only available for protons and helium particles - Set to SRIM calculation")
+                    database = 'SRIM'
+                    self.database_var.set('SRIM')
+                
                 # Calibration with edge + chord length
                 Calibrate.get_chord_length(campaign.measurements[self.meas_name], 'slab', float(self.entry_mean_chord_length.get()), plot=False) 
-                ymax, _, _ = Calibrate.get_stopping_power(campaign.measurements[self.meas_name], chord_length='mean', database='SRIM', precision=0.01, plot=False)
+                ymax, _, _ = Calibrate.get_stopping_power(campaign.measurements[self.meas_name], chord_length='mean', database=database, precision=0.05, plot=False)
                 Calibrate.scale_energy_axis(campaign.measurements[self.meas_name], float(self.entry_edge_pos.get()), ymax, energy_axis='lineal', chord_length='mean')
             
             else:
@@ -921,6 +959,10 @@ class GUI_Analysis:
         
         elif self.extension == '.MCA':
             campaign.read_file(self.datafile)
+
+            # get particle and material and set dropdowns
+            self.detector_var.set(campaign.measurements[self.meas_name].detector)
+            self.particle_var.set(campaign.measurements[self.meas_name].particle)
 
         # Check selected plot options
         selected_plots = []

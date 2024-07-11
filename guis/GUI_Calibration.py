@@ -103,14 +103,20 @@ class GUI_Calibration:
         ttk.Label(self.file_frame, text="Particle:").grid(row=4, column=0, sticky=tk.W)
         self.particle_var = tk.StringVar()
         self.particle_var.set("proton")
-        self.material_dropdown = ttk.OptionMenu(self.file_frame, self.particle_var, "proton", "proton", "carbon", "helium")
-        self.material_dropdown.grid(row=4, column=1, sticky=tk.W)
+        self.particle_dropdown = ttk.OptionMenu(self.file_frame, self.particle_var, "proton", "proton", "carbon", "helium")
+        self.particle_dropdown.grid(row=4, column=1, sticky=tk.W)
+
+        ttk.Label(self.file_frame, text="Database:").grid(row=5, column=0, sticky=tk.W)
+        self.database_var = tk.StringVar()
+        self.database_var.set("ICRU")
+        self.database_dropdown = ttk.OptionMenu(self.file_frame, self.database_var, "ICRU", "ICRU", "NIST", "SRIM")
+        self.database_dropdown.grid(row=5, column=1, sticky=tk.W)
 
         # Entry for chord length
-        ttk.Label(self.file_frame, text="Chord length:").grid(row=5, column=0, sticky=tk.W)
+        ttk.Label(self.file_frame, text="Chord length:").grid(row=6, column=0, sticky=tk.W)
         self.entry_chord_length = ttk.Entry(self.file_frame)
-        self.entry_chord_length.grid(row=5, column=1, sticky=tk.W)
-        ttk.Label(self.file_frame, text="um").grid(row=5, column=2, sticky=tk.W)
+        self.entry_chord_length.grid(row=6, column=1, sticky=tk.W)
+        ttk.Label(self.file_frame, text="um").grid(row=6, column=2, sticky=tk.W)
 
         # Empty line between frames
         ttk.Label(self.left_panel, text="").grid(row=1, column=0, sticky=tk.W)
@@ -176,6 +182,7 @@ class GUI_Calibration:
         Spectrum.cutoff(self.campaign.measurements[self.meas_name], int(self.slider_vars["Spectrum cutoff"].get()))
 
         # Calculate the edge position and stopping power
+        self.calculate_stop_pow()
         _, self.edge_dict = Calibrate.get_edge_pos(self.campaign.measurements[self.meas_name], 'hTC',
                                fit_bounds=[int(self.slider_vars["Fit bound LOW"].get()), int(self.slider_vars["Fit bound HIGH"].get())],
                                check_plot=False)
@@ -221,6 +228,26 @@ class GUI_Calibration:
         # Write sth in the textbox
         self.textbox.insert(tk.END, "Starting fresh ... \n")
 
+    def calculate_stop_pow(self):
+        # Check for database
+        database = self.database_var.get()
+        if database == 'NIST' and self.detector_var.get() == 'sic':
+            messagebox.showinfo("Selected atabase does not exists", "NIST database not available for SiC detectors - Set to SRIM calculation")
+            database = 'SRIM'
+            self.database_var.set('SRIM')
+        if database == 'ICRU' and self.detector_var.get() == 'sic':
+            messagebox.showinfo("Selected atabase does not exists", "ICRU database not available for SiC detectors - Set to SRIM calculation")
+            database = 'SRIM'
+            self.database_var.set('SRIM')
+        if database == 'NIST' and self.particle_var.get() == 'carbon':
+            messagebox.showinfo("Selected atabase does not exists", "NIST database is only available for protons and helium particles - Set to SRIM calculation")
+            database = 'SRIM'
+            self.database_var.set('SRIM')
+
+        _, _, self.stop_pow_dict = Calibrate.get_stopping_power(self.campaign.measurements[self.meas_name],
+                                                                database=database,
+                                                                plot=False) 
+
     def run(self):
 
         # Check if file is specified
@@ -245,7 +272,13 @@ class GUI_Calibration:
             self.campaign.read_file(f'temp/{self.meas_name}.MCA') #The new file
         else:
             self.campaign.read_file(self.datafile)
-        
+
+            # Set the detector and particle dropdowns and lock them
+            self.detector_var.set(self.campaign.measurements[self.meas_name].detector)
+            self.particle_var.set(self.campaign.measurements[self.meas_name].particle)
+            self.detector_dropdown.config(state='disabled')
+            self.particle_dropdown.config(state='disabled')
+
         # Update sliders
         self.num_channels = self.campaign.measurements[self.meas_name].num_channels
         self.create_sliders()
@@ -276,7 +309,7 @@ class GUI_Calibration:
                                fit_bounds=[int(self.slider_vars["Fit bound LOW"].get()), int(self.slider_vars["Fit bound HIGH"].get())],
                                check_plot=False)
         
-        _, _, self.stop_pow_dict = Calibrate.get_stopping_power(self.campaign.measurements[self.meas_name], plot=False)                                                           
+        self.calculate_stop_pow()                                                          
 
         # Close the initial tab
         self.notebook.forget(0)
@@ -305,12 +338,12 @@ class GUI_Calibration:
             self.browse_linearization_path.config(state='normal')
 
             self.detector_dropdown.config(state='normal')
-            self.material_dropdown.config(state='normal')
+            self.particle_dropdown.config(state='normal')
         else:
             self.entry_linearization_path.config(state='disabled')
             self.browse_linearization_path.config(state='disabled')
             self.detector_dropdown.config(state='disabled')
-            self.material_dropdown.config(state='disabled')
+            self.particle_dropdown.config(state='disabled')
 
     def save_values(self):
         # Save the values from the textbox to a file
@@ -331,6 +364,7 @@ class GUI_Calibration:
         self.textbox.insert(tk.END, "------------------------\n")
         self.textbox.insert(tk.END, f"Scaling factor lineal energy: {stop_pow_dict['ymax']/edge_dict['hTC']:.3f} keV/um/mV\n")
         self.textbox.insert(tk.END, f"Maximum energy loss: y_max = {stop_pow_dict['ymax']:.3f} keV/um and LET_max = {stop_pow_dict['Lmax']:.3f} keV/um\n")
+        self.textbox.insert(tk.END, f"Stopping power data: {stop_pow_dict['database']}\n")
         self.textbox.insert(tk.END, "hTC taken as reference, Scaling from mV to keV/um\n")
         self.textbox.insert(tk.END, "------------------------\n")
 
