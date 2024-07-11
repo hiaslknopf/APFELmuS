@@ -92,7 +92,7 @@ class GUI_Linearization:
         self.browse_mV_list_button.grid(row=2, column=0, sticky=tk.W)
 
         # Generate mV list with from to step and pressing button
-        ttk.Label(self.mv_frame, text="From:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(self.mv_frame, text="From:").grid(row=0, column=0)
         self.entry_from = ttk.Entry(self.mv_frame, width=5)
         self.entry_from.grid(row=0, column=1, sticky=tk.W)
         ttk.Label(self.mv_frame, text="To:").grid(row=0, column=2, sticky=tk.W)
@@ -103,6 +103,13 @@ class GUI_Linearization:
         self.entry_step.grid(row=0, column=5, sticky=tk.W)
         self.generate_mV_list_button = ttk.Button(self.mv_frame, text="Generate", command=self.generate_mV_list)
         self.generate_mV_list_button.grid(row=0, column=6, sticky=tk.W)
+
+        # Make an add button right next to it to add the mV list to the text box (with a comma in front)
+        self.add_button = ttk.Button(self.mv_frame, text="Add", command=self.add_mV_list)
+        self.add_button.grid(row=0, column=7, sticky=tk.W)
+
+        self.delete_button = ttk.Button(self.mv_frame, text="Delete", command=lambda: self.entry_mV_list.delete("1.0", tk.END))
+        self.delete_button.grid(row=3, column=0, sticky=tk.W)
         
         # Empty row
         ttk.Label(self.specs_frame, text="").grid(row=4, column=0, sticky=tk.W)
@@ -162,6 +169,21 @@ class GUI_Linearization:
             self.entry_cutoff_back.config(state='disabled')
         else:
             pass
+
+    def add_mV_list(self):
+        try:
+            from_val = float(self.entry_from.get())
+            to_val = float(self.entry_to.get())
+            step_val = float(self.entry_step.get())
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter valid numbers")
+            return
+
+        mV_list = np.arange(from_val, to_val+step_val, step_val)
+        
+        if self.entry_mV_list.get("1.0", tk.END) != '':
+            self.entry_mV_list.insert(tk.END, ', ')
+        self.entry_mV_list.insert(tk.END, ', '.join([str(mV) for mV in mV_list]))
 
     def generate_mV_list(self):
         try:
