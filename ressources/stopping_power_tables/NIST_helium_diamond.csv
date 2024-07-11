@@ -1,5 +1,6 @@
-NIST helium energy vs stopping power vs range (astar),,
-In Diamond: Density = 1 g/cm3,,
+NIST helium energy vs stopping power vs range,,
+Source: NIST astar Database,,
+In Diamond (Carbon): Density = 1 g/cm3,,
 ,,
 Energy [keV],Projected Range [um],dE/dx Elec. [keV/um*cm3/g]
 1,0.02,19.1

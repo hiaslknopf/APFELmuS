@@ -1,8 +1,9 @@
 ICRU proton energy vs stopping power vs range,,
-In Diamond: Density = 1 g/cm3,,
+Source: ICRU Report 73 (2005) - p.128,,
+In Diamond (amorphous Carbon): Density = 1 g/cm3,,
 ,,
 Energy [keV],Projected Range [um],dE/dx Elec. [keV/um*cm3/g]
-25,0,320.6
+25,0.1,320.6
 30,0.1777,354.8
 40,0.4895,414.8
 50,0.7615,465.9

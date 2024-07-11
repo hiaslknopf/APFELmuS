@@ -1,13 +1,13 @@
-ICRU proton energy vs stopping power vs range,,
-Source: ICRU Report 49 (1993) - p.112,,
+NIST proton energy vs stopping power vs range,,
+Source: NIST pstar Database,,
 In Diamond (Graphite): Density = 1 g/cm3,,
 ,,
 Energy [keV],Projected Range [um],dE/dx Elec. [keV/um*cm3/g]
-1,0.0305,14.26
-1.5,0.046,17.53
-2,0.0611,20.31
-2.5,0.0756,22.8
-3,0.0897,25.05
+1,0.03051,14.26
+1.5,0.04596,17.53
+2,0.06107,20.31
+2.5,0.07564,22.8
+3,0.08966,25.05
 4,0.1166,28.34
 5,0.1423,31.33
 6,0.1667,34.04

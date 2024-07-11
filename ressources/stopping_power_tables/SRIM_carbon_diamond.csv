@@ -1,5 +1,6 @@
 SRIM carbon energy vs stopping power vs range,,
-In Diamond: Density = 1 g/cm3,,
+Source: SRIM-2013,,
+In Diamond (Carbon): Density = 1 g/cm3,,
 ,,
 Energy [keV],Projected Range [um],dE/dx Elec. [keV/um*cm3/g]
 10,0.060896,68.60795455

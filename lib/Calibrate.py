@@ -193,7 +193,7 @@ def get_chord_length(measurement, shape:str, dimension:float, plot:bool=False):
     
     return mean, max, chord_length_dist
 
-def get_stopping_power(measurement, chord_length:str='mean', database:str='SRIM', precision:float=0.01, particle:str='None', material:str='None', plot:bool=False):
+def get_stopping_power(measurement, chord_length:str='mean', database:str='SRIM', precision:float=0.05, particle:str='None', material:str='None', plot:bool=False):
         """ Get maximum lineal energy or LET with stopping power tables.
         Algorithm for unidirectional beam and normal incidence.
 
@@ -201,7 +201,7 @@ def get_stopping_power(measurement, chord_length:str='mean', database:str='SRIM'
         Or attached to the measurement object. In this case, the particle and material are taken from the measurement object.
 
         Args:
-            measurement: Spectrum to be analzed
+            measurement: Spectrum to be analzed - Can be used with a measurement object by giving 'None'
             chord_length: Chord length of the given arrangement in µm
             database: Available options 'ICRU', 'SRIM'
             precision (optional): Precision of the interpolation in keV/µm
@@ -264,7 +264,7 @@ def get_stopping_power(measurement, chord_length:str='mean', database:str='SRIM'
         ################################
         # PREPARE DATA
         ################################
-        table = pd.read_csv(f"{ressources_path}/{database}_{particle}_{material}.csv", sep=',', skiprows=4, names=['energy', 'range', 'dE/dx'])
+        table = pd.read_csv(f"{ressources_path}/{database}_{particle}_{material}.csv", sep=',', skiprows=5, names=['energy', 'range', 'dE/dx'])
         table['dE/dx'] = table['dE/dx'].multiply(densities[material])
 
         interp_range = np.arange(0, 100 + precision, precision) #From 0 to 100 µm

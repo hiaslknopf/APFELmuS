@@ -22,7 +22,8 @@ from lib import Linearization, FileTranslator
 from guis.welcome_message import welcome_message
 
 #TODO: Theres some weird bug with deleting the old plots, Just hit buttons twice
-#TODO: Its a pain in the ass to enter the mV values manually, maybe you find another way to do this
+#TODO: Stacked generation of mV values
+#TODO: Cleaning up and commenting
 
 class GUI_Linearization:
 
@@ -121,11 +122,11 @@ class GUI_Linearization:
         ttk.Label(self.cutoff_frame, text="Channel").grid(row=3, column=2, sticky=tk.W)
 
         # Empty row
-        ttk.Label(root, text="").grid(row=3, column=0, sticky=tk.W)
+        ttk.Label(root, text="").grid(row=4, column=0, sticky=tk.W)
 
         # Frame for buttons
         self.button_frame = ttk.Frame(self.left_panel, borderwidth=2, relief="solid")
-        self.button_frame.grid(row=4, column=0, columnspan=3, sticky=tk.W+tk.E)
+        self.button_frame.grid(row=5, column=0, columnspan=3, sticky=tk.W+tk.E)
 
         # Bottom Buttons
         self.run_button = ttk.Button(self.button_frame, text="RUN", command=self.run)

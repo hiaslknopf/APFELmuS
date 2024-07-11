@@ -12,7 +12,6 @@ import os
 
 from lib import FileTranslator
 
-#TODO: Adjust FileTranslator + MicroDosimetry read functions of calibration files
 #TODO: Test this also for LO; MID; HIGH
 
 """ This script contains a helper tool to generate a calibration file (Channel -> mV) needed for the linearity/calibration procedure.
@@ -328,6 +327,7 @@ def get_linearization(name:str, output_path:str, pulse_mV_list:list, spectrum_fi
 def linearization_from_MAESTRO_rpt(maestro_rpt_file: str, pulse_mV_list:list, pulser_calibration:str = f'{ressources_path}/1to1_response.csv',
                                    output_path:str='', name:str='linearization', 
                                    method:str='interpol', testplot:bool=False, num_channels:int=4096):
+    
     """ Get a calibration file (csv) from a MAESTRO report file in 4 steps
 
     - Read the pulser and spectrum file

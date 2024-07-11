@@ -15,6 +15,11 @@ example_file = 'exp_carbon_data_1'
 
 #----------------------------------------------------
 
+# Just get the stopping power without any measurement
+Calibrate.get_stopping_power('None', 10, 'SRIM', 0.05, 'helium', 'sic', plot=True)
+
+#----------------------------------------------------
+
 #Read in
 campaign1 = MicroDosimetry()
 campaign1.read_file(f'tests/testdata/{edge_file}.MCA')
