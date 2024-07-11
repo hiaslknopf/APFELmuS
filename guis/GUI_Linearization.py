@@ -46,11 +46,16 @@ class GUI_Linearization:
         self.file_frame.grid(row=0, column=0, columnspan=3, sticky=tk.W+tk.E)
 
         #Browse for file
-        ttk.Label(self.file_frame, text="Pulser File (*.Spe):").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(self.file_frame, text="Pulser File (*.Spe) or Report (*.Rpt):").grid(row=0, column=0, sticky=tk.W)
         self.entry_pulser_file_path = ttk.Entry(self.file_frame)
         self.entry_pulser_file_path.grid(row=0, column=1, sticky=tk.W)
         self.browse_pulser_file_path = ttk.Button(self.file_frame, text="Browse", command=self.browse_pulser_spec)
         self.browse_pulser_file_path.grid(row=0, column=2, sticky=tk.W)
+
+        # Variable to trace changes in the file entry
+        self.file_var = tk.StringVar()
+        self.file_var.trace_add("write", self.toggle_input)
+        self.entry_pulser_file_path["textvariable"] = self.file_var
 
         #Checkbutton for using calibration file
         self.use_calibration = tk.BooleanVar()
@@ -73,30 +78,48 @@ class GUI_Linearization:
         self.specs_frame.grid(row=2, column=0, columnspan=3, sticky=tk.W+tk.E)
 
         # Entry for mV list (textbox)
-        ttk.Label(self.specs_frame, text="mV list (comma separated):").grid(row=0, column=0, sticky=tk.W)
-        self.entry_mV_list = tk.Text(self.specs_frame, height=5, width=30)
-        self.entry_mV_list.grid(row=0, column=1, sticky=tk.W)
+        ttk.Label(self.specs_frame, text="mV list (comma separated):").grid(row=1, column=0, sticky=tk.W)
+        self.entry_mV_list = tk.Text(self.specs_frame, height=5, width=50)
+        self.entry_mV_list.grid(row=2, column=0, sticky=tk.W)
+
+        # MV INPUT
+        self.mv_frame = ttk.Frame(self.specs_frame)
+        self.mv_frame.grid(row=3, column=0, sticky=tk.W+tk.E)
 
         # Button to load mV list from file
-        self.browse_mV_list_button = ttk.Button(self.specs_frame, text="Load from file", command=self.browse_mV_list)
+        self.browse_mV_list_button = ttk.Button(self.mv_frame, text="Load from file", command=self.browse_mV_list)
         self.browse_mV_list_button.grid(row=2, column=0, sticky=tk.W)
+
+        # Generate mV list with from to step and pressing button
+        ttk.Label(self.mv_frame, text="From:").grid(row=0, column=0, sticky=tk.W)
+        self.entry_from = ttk.Entry(self.mv_frame, width=5)
+        self.entry_from.grid(row=0, column=1, sticky=tk.W)
+        ttk.Label(self.mv_frame, text="To:").grid(row=0, column=2, sticky=tk.W)
+        self.entry_to = ttk.Entry(self.mv_frame, width=5)
+        self.entry_to.grid(row=0, column=3, sticky=tk.W)
+        ttk.Label(self.mv_frame, text="Step:").grid(row=0, column=4, sticky=tk.W)
+        self.entry_step = ttk.Entry(self.mv_frame, width=5)
+        self.entry_step.grid(row=0, column=5, sticky=tk.W)
+        self.generate_mV_list_button = ttk.Button(self.mv_frame, text="Generate", command=self.generate_mV_list)
+        self.generate_mV_list_button.grid(row=0, column=6, sticky=tk.W)
         
         # Empty row
-        ttk.Label(self.specs_frame, text="").grid(row=3, column=0, sticky=tk.W)
+        ttk.Label(self.specs_frame, text="").grid(row=4, column=0, sticky=tk.W)
 
-        # Slider and entry for cutoff
-        ttk.Label(self.specs_frame, text="Spectrum cutoff:").grid(row=4, column=0, sticky=tk.W)
+        # Cutoff frame
+        self.cutoff_frame = ttk.Frame(self.specs_frame)
+        self.cutoff_frame.grid(row=5, column=0, columnspan=3, sticky=tk.W+tk.E)
 
-        self.slider_var = tk.IntVar()
-        self.slider_cutoff = ttk.Scale(self.specs_frame, from_=0, to=250, orient=tk.HORIZONTAL, variable=self.slider_var)
-        self.slider_cutoff.grid(row=4, column=0, sticky=tk.W+tk.E)
-        
-        self.entry_cutoff = ttk.Entry(self.specs_frame, width=5, textvariable=self.slider_var)
-        self.entry_cutoff.grid(row=4, column=1, sticky=tk.W)
+        ttk.Label(self.cutoff_frame, text="Spectrum cutoff:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(self.cutoff_frame, text="Front").grid(row=2, column=0, sticky=tk.W)
+        self.entry_cutoff_front = ttk.Entry(self.cutoff_frame, width=5)
+        self.entry_cutoff_front.grid(row=2, column=1, sticky=tk.W)
+        ttk.Label(self.cutoff_frame, text="Channel").grid(row=2, column=2, sticky=tk.W)
+        ttk.Label(self.cutoff_frame, text="Back").grid(row=3, column=0, sticky=tk.W)
+        self.entry_cutoff_back = ttk.Entry(self.cutoff_frame, width=5)
+        self.entry_cutoff_back.grid(row=3, column=1, sticky=tk.W)
+        ttk.Label(self.cutoff_frame, text="Channel").grid(row=3, column=2, sticky=tk.W)
 
-        self.slider_cutoff.bind("<ButtonRelease-1>", self.on_slider_cutoff_change)
-        self.entry_cutoff.bind("<Return>", self.on_entry_cutoff_change)
-        
         # Empty row
         ttk.Label(root, text="").grid(row=3, column=0, sticky=tk.W)
 
@@ -123,6 +146,35 @@ class GUI_Linearization:
         self.notebook.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
         self.add_initial_tab()
     
+    def toggle_input(self, *args):
+
+        file_content = self.file_var.get()
+
+        if '.Rpt' in file_content:
+            print("Rpt file detected")
+            # Cutoff buttons
+            self.entry_cutoff_front.delete(0, tk.END)
+            self.entry_cutoff_front.insert(0, '0')
+            self.entry_cutoff_front.config(state='disabled')
+            self.entry_cutoff_back.delete(0, tk.END)
+            self.entry_cutoff_back.insert(0, '0')
+            self.entry_cutoff_back.config(state='disabled')
+        else:
+            pass
+
+    def generate_mV_list(self):
+        try:
+            from_val = float(self.entry_from.get())
+            to_val = float(self.entry_to.get())
+            step_val = float(self.entry_step.get())
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter valid numbers")
+            return
+
+        mV_list = np.arange(from_val, to_val+step_val, step_val)
+        self.entry_mV_list.delete("1.0", tk.END)
+        self.entry_mV_list.insert("1.0", ', '.join([str(mV) for mV in mV_list]))
+
     def add_initial_tab(self):
         initial_tab = ttk.Frame(self.notebook)
         self.notebook.add(initial_tab, text="Welcome")
@@ -137,7 +189,7 @@ class GUI_Linearization:
 
     def browse_pulser_spec(self):
         script_directory = os.path.dirname(os.path.abspath(__file__))
-        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("MAESTRO files", "*.Spe")], multiple=True)
+        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("MAESTRO files", "*.Spe"), ("MAESTRO peak report", "*.Rpt")], multiple=False)
         self.entry_pulser_file_path.delete(0, tk.END)
         self.entry_pulser_file_path.insert(0, file_path)
 
@@ -178,22 +230,6 @@ class GUI_Linearization:
         toolbar.update()
         canvas.get_tk_widget().grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
 
-    def on_slider_cutoff_change(self, event):
-
-        # Get the slider value
-        self.slider_var.set(int(self.slider_cutoff.get()))
-        self.rerun_peaks()
-
-    def on_entry_cutoff_change(self, event):
-        try:
-            cutoff = int(self.entry_cutoff.get())
-            if cutoff < 0 or cutoff > 4095:
-                raise ValueError
-            self.slider_var.set(cutoff)
-            self.rerun_peaks()
-        except ValueError:
-            messagebox.showwarning("Warning", "Please enter a valid cutoff value (0-4095)")
-
     def run(self):
         
         if self.entry_pulser_file_path.get() == '':
@@ -214,7 +250,11 @@ class GUI_Linearization:
             self.calibration_file = 'ressources/1to1_response.csv'
 
         # Read in the pulser spectrum
-        self.spectrum_df, _, self.num_channels = FileTranslator._read_MAESTRO_file(self.entry_pulser_file_path.get())
+        if '.Spe' in self.entry_pulser_file_path.get():
+            self.spectrum_df, _, self.num_channels = FileTranslator._read_MAESTRO_file(self.entry_pulser_file_path.get())
+        elif '.Rpt' in self.entry_pulser_file_path.get():
+            self.rpt_peaks = FileTranslator._read_MAESTRO_rpt_file(self.entry_pulser_file_path.get())
+            self.num_channels = 4096
 
         # Run the linearization
         self.rerun_peaks()
@@ -231,12 +271,6 @@ class GUI_Linearization:
         if mV_list == ['']:
             messagebox.showwarning("Warning", "Please specify a list of mV values")
             self.reset_GUI()
-
-        # Get the slider value (if typed in)
-        try:
-            self.slider_var.set(int(self.entry_cutoff.get()))
-        except:
-            pass
         
         # Convert the mV list to floats and a sorted numpy array
         mV_list = np.array([float(mV) for mV in mV_list])
@@ -245,18 +279,23 @@ class GUI_Linearization:
         # Read in the pulser calibration
         self.pulser_df = Linearization._read_pulser(self.calibration_file, self.mV_list, testplot=False)
 
-        # Fit the peaks
-        self.cutoff = self.slider_var.get()
-        self.peaks, self.popt_list = Linearization._fit_peaks(self.spectrum_df, testplot=False, cutoff=self.cutoff)
+        if '.Spe' in self.entry_pulser_file_path.get():
+            # Fit the peaks
+            self.peaks, self.popt_list = Linearization._fit_peaks(self.spectrum_df, testplot=False,
+                                                                cutoff_front=int(self.entry_cutoff_front.get()),
+                                                                cutoff_back=int(self.entry_cutoff_back.get()))
+            # Get noise figure from average sigma of the gaussian fit
+            self.sigma = np.mean([popt[2] for popt in self.popt_list])
+
+        elif '.Rpt' in self.entry_pulser_file_path.get():
+            self.peaks = self.rpt_peaks
 
         # Check if all peaks were found
         if len(self.peaks) != len(self.mV_list):
             messagebox.showwarning("Warning",
                                    f"The number of peaks found ({len(self.peaks)}) does not match the number of mV values ({len(self.mV_list)})")
         
-        # Get noise figure from average sigma of the gaussian fit
-        self.sigma = np.mean([popt[2] for popt in self.popt_list])
-
+        
         # Fit the linearization curve
         columns = ['CHANNEL', 'INPUT [mV]']
         self.linearization_df = pd.DataFrame(index=np.arange(self.num_channels), columns=columns)
@@ -272,7 +311,9 @@ class GUI_Linearization:
             self.notebook.forget(i)
 
         # Show the result plots
-        self.add_plot_tab(Linearization._plot_peaks, title="Peaks", arg_dict={'spectrum': self.spectrum_df, 'positions': self.peaks, 'popt_list': self.popt_list})
+        if '.Spe' in self.entry_pulser_file_path.get():
+            self.add_plot_tab(Linearization._plot_peaks, title="Peaks", arg_dict={'spectrum': self.spectrum_df, 'positions': self.peaks, 'popt_list': self.popt_list})
+        
         self.add_plot_tab(Linearization._plot_linearization, title="Linearization",
                   arg_dict={'channel': self.peaks, 'mV': mV, 'lin_curve_channel': lin_curve_channel, 'lin_curve_mV': lin_curve_mV,
                          'method': 'interpol', 'num_channels': self.num_channels})
@@ -308,8 +349,8 @@ class GUI_Linearization:
         self.entry_cal_path.config(state='disabled')
         self.browse_cal_path.config(state='disabled')
         self.entry_mV_list.delete("1.0", tk.END)
-        self.entry_cutoff.delete(0, tk.END)
-        self.slider_var.set(0)
+        self.entry_cutoff_front.delete(0, tk.END)
+        self.entry_cutoff_back.delete(0, tk.END)
 
         # Close all open tabs
         for i in range(0, len(self.notebook.tabs())):

@@ -7,6 +7,8 @@ import pandas as pd
 from dateutil import parser
 from datetime import datetime
 
+import numpy as np
+
 """ This is a translator tool that converts spectrum files (.Spe) and linearization files (.csv) into the current version of MCA files (.MCA) for MicroDosimetry analysis.
 It is currently designed to work with ORTEC MAESTRO .Spe output files.
 """
@@ -37,6 +39,21 @@ def _read_MAESTRO_file(filepath):
     data_df = pd.read_csv(filepath, header=None, skiprows=12, nrows = num_channels, names=['COUNTS'])
 
     return data_df, header_dict, num_channels
+
+def _read_MAESTRO_rpt_file(filepath):
+    """ Read MAESTRO .rpt report containing peak information
+    and return the centroid values as an arrays
+
+    Args:
+        filepath
+    Returns:
+        centroid_array: Array containing peak position information
+    """
+
+    column_names = ["ROI#", "RANGE_start", "RANGE_end", "GROSS", "NET", "+/-", "CENTROID", "FWHM", "FW(1/5)M", "LIBRARY"]
+    df = pd.read_csv(filepath, delim_whitespace=True, names=column_names, skiprows=5)
+
+    return df['CENTROID'].to_numpy()
 
 def __read_Linearization_file(filepath, num_channels):
     """ Read linearization file into dataframe. Expects a tab separated csv with header + empty line with channel number as index (1 or 3 columns).

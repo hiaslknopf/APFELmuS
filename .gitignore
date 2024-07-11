@@ -28,3 +28,8 @@ docs/.$*
 ressources/.$*
 
 access.txt
+
+fix_lin.py
+sandra_test_lin.Spe
+guis/GUI_Merge_Spectra.py
+*.Rpt

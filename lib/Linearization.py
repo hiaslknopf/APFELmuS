@@ -142,7 +142,7 @@ def _read_pulser(filename, pulse_mV_list, testplot=False, ax=None):
 
     return pulser_df
 
-def _fit_peaks(spectrum, testplot=False, cutoff=False):
+def _fit_peaks(spectrum, testplot=False, cutoff_front=False, cutoff_back=False):
     """ Fit the peaks in the MCA spectrum and return the positions.
 
     Args:
@@ -150,17 +150,28 @@ def _fit_peaks(spectrum, testplot=False, cutoff=False):
         name: The name of the spectrum
         output_path: The path to save the plots
         testplot: If True, plots are generated and shown for each step
-        cutoff: Low energy noise cutoff, so the noise peak is not fitted (may be necessary)
+        cutoff_front: Low energy noise cutoff, so the noise peak is not fitted (may be necessary)
+        cutoff_back: High energy noise cutoff, so the noise peak is not fitted (may be necessary)
     Returns:
         positions: The positions of the peaks in the spectrum (channels)    
     """
 
     #Noise cutoff, so initial slope is not recognized as peak
-    if cutoff:
-        spectrum['COUNTS'][:cutoff] = 0
+    if cutoff_front:
+        spectrum['COUNTS'][:cutoff_front] = 0
+    
+    if cutoff_back:
+        spectrum['COUNTS'][cutoff_back:] = 0
 
     positions_gauss = []
-    positions, prop = find_peaks(spectrum['COUNTS'], prominence=120, distance=5) #It may be necessary to tune the prominence to find all peaks
+    #It may be necessary to tune the prominence to find all peaks
+    positions, prop = find_peaks(spectrum['COUNTS'], height=50, prominence=120, distance=10) 
+
+    # If peak found on the left edge, remove it (noise artifact)
+    if positions[0] == 0 or positions[0] == cutoff_front:
+        print('Peak found on the left edge, removing it')
+        positions = positions[1:]
+
     print(len(positions), 'peaks found in the spectrum')
 
     popt_list = []
@@ -172,7 +183,7 @@ def _fit_peaks(spectrum, testplot=False, cutoff=False):
         positions_gauss.append(popt[1])        
 
     if testplot:
-        _plot_peaks(spectrum, positions, popt_list, ax=None)
+        _plot_peaks(spectrum, positions_gauss, popt_list, ax=None)
 
     positions = np.array(positions_gauss) #Take the gaussian fit positions (more accurate)
 
@@ -222,7 +233,8 @@ def _fit_linearization(channel, mV, num_channels, method):
     return np.linspace(1, num_channels, num_channels), y_fit
 
 def get_linearization(name:str, output_path:str, pulse_mV_list:list, spectrum_file1:str, spectrum_file2:str=None, spectrum_file3:str=None,
-                      pulser_calibration:str = f'{ressources_path}/1to1_response.csv', method:str='linear', testplot:bool=False, cutoff:bool=False):
+                      pulser_calibration:str = f'{ressources_path}/1to1_response.csv', method:str='linear', testplot:bool=False,
+                      cutoff_front:bool=False, cutoff_back:bool=False):
     """ Get a calibration file (csv) in 4 steps
 
     - Read the pulser and spectrum file
@@ -238,7 +250,8 @@ def get_linearization(name:str, output_path:str, pulse_mV_list:list, spectrum_fi
         spectrum_file<n>: The spectrum file(s) to be read (max 3)
         method: The method for the linearization curve fit (linear, piecewise)
         testplot: If True, plots are generated and shown for each step
-        cutoff: Low energy noise cutoff, so the noise peak is not fitted (may be necessary)
+        cutoff_front: Low energy noise cutoff, so the noise peak is not fitted (may be necessary)
+        cutoff_back: High energy noise cutoff, so the noise peak is not fitted (may be necessary)
     """
 
     #Read the pulser file
@@ -270,7 +283,7 @@ def get_linearization(name:str, output_path:str, pulse_mV_list:list, spectrum_fi
     print(f'Gaussian peak fitting for {len(spectra_list)} spectra...')
     #Fit the peaks
     for i in range(len(spectra_list)):
-        peaks, popt_list = _fit_peaks(spectra_list[i], testplot, cutoff)
+        peaks, popt_list = _fit_peaks(spectra_list[i], testplot, cutoff_front, cutoff_back)
         peaks_list.append(peaks)
 
     # Get noise figure from average sigma of the gaussian fit
@@ -311,3 +324,49 @@ def get_linearization(name:str, output_path:str, pulse_mV_list:list, spectrum_fi
 
     print('\n')
     print(f'Average noise figure from fits (FWHM): {sigma*2.355:.2f} channels')
+
+def linearization_from_MAESTRO_rpt(maestro_rpt_file: str, pulse_mV_list:list, pulser_calibration:str = f'{ressources_path}/1to1_response.csv',
+                                   output_path:str='', name:str='linearization', 
+                                   method:str='interpol', testplot:bool=False, num_channels:int=4096):
+    """ Get a calibration file (csv) from a MAESTRO report file in 4 steps
+
+    - Read the pulser and spectrum file
+    - Fit the peaks (Gaussian)
+    - Fit the linearization curve
+    - Write the calibration file (csv)
+
+    Args:
+        maestro_rpt_file: The MAESTRO report file to be read
+        pulse_mV_list: The list of mV values to be used for the pulser calibration
+        output_path: The path to save the plots
+        method: The method for the linearization curve fit (linear, piecewise)
+        testplot: If True, plots are generated and shown for each step
+    """
+
+    #Read the MAESTRO report file
+    channel = FileTranslator._read_MAESTRO_rpt_file(maestro_rpt_file)
+    print(f'Read MAESTRO report file: {maestro_rpt_file}\n')
+
+    #Read the pulser file
+    pulser_df = _read_pulser(pulser_calibration, pulse_mV_list, testplot)
+    print(f'Read Pulser calibration: {pulser_calibration}\n')
+
+
+    #Fit the linearization curve
+    print(f'Fitting linearization curve...')
+    mV = pulser_df['mV_measured'].values
+
+    lin_curve_channel, lin_curve_mV = _fit_linearization(channel, mV, num_channels, method)
+
+    #Write the calibration file
+    columns = ['CHANNEL', 'INPUT [mV]']
+    linearization_df = pd.DataFrame(index=np.arange(num_channels), columns=columns)
+
+    linearization_df['CHANNEL'] = lin_curve_channel.astype(int)
+    linearization_df['INPUT [mV]'] = np.round(lin_curve_mV, 3)
+
+    pd.DataFrame.to_csv(linearization_df, f'{output_path}/{name}.csv', sep=',', index=False)
+    print(f'Wrote linearization file: {output_path}/{name}')
+
+    if testplot:
+        _plot_linearization(channel, mV, lin_curve_channel, lin_curve_mV, method, num_channels, ax=None)

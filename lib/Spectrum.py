@@ -53,6 +53,15 @@ def _lin_2_log(measurement, n_bins_per_decade: int):
 
     return lin_to_log_x
 
+def _merge_plot_unscaled(dict, ax=None):
+    pass
+
+def _merge_plot_scaled(dict, ax=None):
+    pass
+
+def _merge_plot_stitched(dict, ax=None):
+    pass
+
 def cutoff(measurement, channels:int=None, energy:float=None, lineal_energy:float=None):
     """ Low energy cutoff for noisy channels
     Give either channels or energy as cutoff value
