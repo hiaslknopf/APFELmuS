@@ -91,6 +91,10 @@ if plot:
     Output.plot_single(campaign1.measurements['sandra_mid'], 'After logarithmic binning: Mid gain')
     Output.plot_single(campaign1.measurements['sandra_high'], 'After logarithmic binning: High gain')
 
+#Output.csv_output(campaign1.measurements['sandra_low'], 'tests/testdata')
+#Output.csv_output(campaign1.measurements['sandra_mid'], 'tests/testdata')
+#Output.csv_output(campaign1.measurements['sandra_high'], 'tests/testdata')
+
 #An exception is the merge function for which you have to create a new entry in the measurement dict for the returned merged spectrum
 # This can be done using all 3 gains or only 2 of them
 sp_to_merge = [campaign1.measurements['sandra_mid'], campaign1.measurements['sandra_high'], campaign1.measurements['sandra_low']]
@@ -103,7 +107,7 @@ sp_to_merge = [campaign1.measurements['sandra_high'], campaign1.measurements['sa
 overlap_regions = [[4.5, 8]]
 scaling_factors = [0.6]
 stitching_points = [6.5]
-merged_spectrum = Spectrum.merge_spectra(sp_to_merge, overlap_regions, scaling_factors, stitching_points, testplots=True)
+merged_spectrum, _ = Spectrum.merge_spectra(sp_to_merge, overlap_regions, scaling_factors, stitching_points, testplots=True)
 
 #This is done with the add_measurement method
 #You also have to assign an identifier for this new spectrum
@@ -113,8 +117,7 @@ Output.plot_single(campaign1.measurements['sandra_merged'], 'Merged Spectrum')
 #-------------------------------------------------
 
 #In the end you can calculate mean values
-y_F, y_D = Output.get_mean_value(campaign1.measurements['sandra_merged'])
 Spectrum.normalize_spectrum(campaign1.measurements['sandra_merged'])
 
 #And plot the final data
-Output.plot_single(campaign1.measurements['sandra_merged'], output_path='plots/single.png', mean=y_D)
+Output.plot_single(campaign1.measurements['sandra_merged'], output_path='plots/single.png')

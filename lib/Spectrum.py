@@ -53,14 +53,129 @@ def _lin_2_log(measurement, n_bins_per_decade: int):
 
     return lin_to_log_x
 
-def _merge_plot_unscaled(dict, ax=None):
-    pass
+def _merge_plot_unscaled(measurements, dict, ax=None, show=False):
+    """ Plot the unscaled spectra for the merging process """
 
-def _merge_plot_scaled(dict, ax=None):
-    pass
+    if ax is None:
+        fig, ax = plt.subplots()
 
-def _merge_plot_stitched(dict, ax=None):
-    pass
+    color_map = {'HIGH': 'cornflowerblue', 'MID': 'orange', 'LOW': 'forestgreen',
+                 'overlap_low': 'r', 'overlap_high': 'b'}
+    
+    data_x = []
+    data_y = []
+    for meas in range(len(measurements)):
+        data_x.append(measurements[meas].data[measurements[meas].x_axis].tolist())
+        data_y.append(measurements[meas].data[measurements[meas].y_axis].tolist())
+
+    for i in range(len(measurements)):
+        ax.step(data_x[i], data_y[i], label = f"{measurements[i].gain}", color = color_map[measurements[i].gain])
+    
+    # Plot the overlap regions
+    ax.axvline(x = dict['lower_overlap']['lower_energy_low'], color=color_map['overlap_low'], linestyle='--')
+    ax.axvline(x = dict['lower_overlap']['upper_energy_low'], color=color_map['overlap_low'], linestyle='--')
+    ax.axvline(x = dict['lower_overlap']['lower_energy_high'], color='darkorange', linestyle='--')
+    ax.axvline(x = dict['lower_overlap']['upper_energy_high'], color='darkorange', linestyle='--')
+    ax.fill_betweenx([0, 5*max(data_y[0])], dict['lower_overlap']['lower_energy_low'], dict['lower_overlap']['upper_energy_low'],
+                        color='r', alpha=0.25, label='Overlap region 1') 
+
+    if len(measurements) == 3:
+        ax.axvline(x = dict['upper_overlap']['lower_energy_low'], color=color_map['overlap_high'], linestyle='--')
+        ax.axvline(x = dict['upper_overlap']['upper_energy_low'], color=color_map['overlap_high'], linestyle='--')
+        ax.axvline(x = dict['upper_overlap']['lower_energy_high'], color='darkblue', linestyle='--')
+        ax.axvline(x = dict['upper_overlap']['upper_energy_high'], color='darkblue', linestyle='--')
+        ax.fill_betweenx([0, 5*max(data_y[0])], dict['upper_overlap']['lower_energy_low'], dict['upper_overlap']['upper_energy_low'],
+                        color='b', alpha=0.25, label='Overlap region 2')
+
+    ax.legend()
+    ax.set_xscale('log')
+    ax.set_xlim(0.01,1000)
+    ax.set_ylim(0, 1.1*max(np.max(data_y[i]) for i in range(len(data_y))))
+
+    ax.set_title('Unscaled spectra - Overlap regions')
+
+    if show:
+        plt.show()
+
+def _merge_plot_scaled(measurements, dict, ax=None, show=False):
+
+    scaling_factor_low = dict['scaling_factor_low']
+    if len(measurements) == 3:
+        scaling_factor_high = dict['scaling_factor_high']
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    color_map = {'HIGH': 'cornflowerblue', 'MID': 'orange', 'LOW': 'forestgreen',
+                 'overlap_low': 'r', 'overlap_high': 'b'}
+    
+    data_x = []
+    data_y = []
+    for meas in range(len(measurements)):
+        data_x.append(measurements[meas].data[measurements[meas].x_axis].tolist())
+        data_y.append(measurements[meas].data[measurements[meas].y_axis].tolist())
+
+    ax.step(data_x[0], np.multiply(data_y[0],scaling_factor_low), label = f"{measurements[0].gain}*{scaling_factor_low:.3f}", color = color_map[measurements[0].gain])
+    ax.step(data_x[1], data_y[1], label = f"{measurements[1].gain}", color = color_map[measurements[1].gain])
+    if len(measurements) == 3:
+        ax.step(data_x[2], np.multiply(data_y[2], scaling_factor_high), label = f"{measurements[2].gain}*{scaling_factor_high:.3f}", color = color_map[measurements[2].gain])
+
+    ax.axvline(x = dict['lower_overlap']['lower_energy_low'], color=color_map['overlap_low'], linestyle='--', label = 'Overlap region 1 - low')
+    ax.axvline(x = dict['lower_overlap']['upper_energy_low'], color=color_map['overlap_low'], linestyle='--')
+    ax.fill_betweenx([0, 5*max(data_y[0])], dict['lower_overlap']['lower_energy_low'], dict['lower_overlap']['upper_energy_low'], color='r', alpha=0.25)
+
+    if len(measurements) == 3:
+        ax.axvline(x = dict['upper_overlap']['lower_energy_low'], color=color_map['overlap_high'], linestyle='--', label = 'Overlap region 2 - low')
+        ax.axvline(x = dict['upper_overlap']['upper_energy_low'], color=color_map['overlap_high'], linestyle='--')
+        ax.fill_betweenx([0, 5*max(data_y[0])], dict['upper_overlap']['lower_energy_low'], dict['upper_overlap']['upper_energy_low'], color='b', alpha=0.25)
+    
+    ax.legend()
+    ax.set_xscale('log')
+    ax.set_xlim(0.01,1000)
+    ax.set_ylim(0, 1.1*max(np.max(data_y[i]) for i in range(len(data_y))))
+
+    if show:
+        plt.show()
+    
+def _merge_plot_stitched(measurements, dict, ax=None, show=False):
+
+    scaling_factor_low = dict['scaling_factor_low']
+    
+    if len(measurements) == 3:
+        scaling_factor_high = dict['scaling_factor_high']
+        stitching_points = [dict['stitching_point_low'], dict['stitching_point_high']]
+    else:
+        stitching_points = [dict['stitching_point_low']]
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    color_map = {'HIGH': 'cornflowerblue', 'MID': 'orange', 'LOW': 'forestgreen',
+                 'overlap_low': 'r', 'overlap_high': 'b'}
+
+    if len(measurements) == 2:
+        data_x = [dict['stitched_x_low'], dict['stitched_x_high']]
+        data_y = [dict['stitched_y_low'], dict['stitched_y_high']]
+    if len(measurements) == 3:
+        data_x = [dict['stitched_x_low'], dict['stitched_x_mid'], dict['stitched_x_high']]
+        data_y = [dict['stitched_y_low'], dict['stitched_y_mid'], dict['stitched_y_high']]
+
+    ax.step(data_x[0],data_y[0], label = f"{measurements[0].gain}*{scaling_factor_low:.3f}", color = color_map[measurements[0].gain])
+    ax.step(data_x[1], data_y[1], label = f"{measurements[1].gain}", color = color_map[measurements[1].gain])
+    if len(measurements) == 3:
+        ax.step(data_x[2], data_y[2], label = f"{measurements[2].gain}*{scaling_factor_high:.3f}", color = color_map[measurements[2].gain])
+
+    ax.axvline(x = stitching_points[0], color=color_map['overlap_low'], linestyle='--', label = 'Stitching point 1', lw=2)
+    if len(measurements) == 3:
+        ax.axvline(x = stitching_points[1], color=color_map['overlap_high'], linestyle='--', label = 'Stitching point 2', lw=2)
+    
+    ax.legend()
+    ax.set_xscale('log')
+    ax.set_xlim(0.01,1000)
+    ax.set_ylim(0, 1.1*max(np.max(data_y[i]) for i in range(len(data_y))))
+
+    if show:
+        plt.show()
 
 def cutoff(measurement, channels:int=None, energy:float=None, lineal_energy:float=None):
     """ Low energy cutoff for noisy channels
@@ -422,8 +537,6 @@ def merge_spectra(measurements: list, overlap_regions: list, scaling_factors: li
 
     #TODO: Brauch ich eine gemeinsame x-Achse für alle 3? Also iwie interpolieren, dass gleich gebinnt
 
-    color_map = {'HIGH': 'cornflowerblue', 'MID': 'orange', 'LOW': 'forestgreen',
-                 'overlap_low': 'r', 'overlap_high': 'b'}
     GRANULARITY = 100 # For the overlap regions
 
     #---------Check if data matches-----------
@@ -474,17 +587,24 @@ def merge_spectra(measurements: list, overlap_regions: list, scaling_factors: li
     for meas in range(len(measurements)):
         data_x.append(measurements[meas].data[measurements[meas].x_axis].tolist())
         data_y.append(measurements[meas].data[measurements[meas].y_axis].tolist())
-
+    
     # Overlap regions
     bounds_dict = {'lower_overlap' : {'lower_energy_guess': overlap_regions[0][0], 'upper_energy_guess': overlap_regions[0][1],
                                       'lower_idx_low': 0, 'upper_idx_low': 0, 'lower_idx_high': 0, 'upper_idx_high': 0,
                                       'lower_energy_low': 0, 'upper_energy_low': 0, 'lower_energy_high': 0, 'upper_energy_high': 0,
                                       'x_axis_low': [], 'x_axis_high': [], 'y_axis_low': [], 'y_axis_high': []}}
+    
+    bounds_dict['scaling_factor_low'] = scaling_factors[0]
+    bounds_dict['stitching_point_low'] = stitching_points[0]
+
     if len(measurements) == 3:
         bounds_dict['upper_overlap'] = {'lower_energy_guess': overlap_regions[1][0], 'upper_energy_guess': overlap_regions[1][1],
                                         'lower_idx_low': 0, 'upper_idx_low': 0, 'lower_idx_high': 0, 'upper_idx_high': 0,
                                         'lower_energy_low': 0, 'upper_energy_low': 0, 'lower_energy_high': 0, 'upper_energy_high': 0,
                                         'x_axis_low': [], 'x_axis_high': [], 'y_axis_low': [], 'y_axis_high': []}
+        
+        bounds_dict['scaling_factor_high'] = scaling_factors[1]
+        bounds_dict['stitching_point_high'] = stitching_points[1]
                                         
     # Fill the dictionary
     for i, meas in enumerate(measurements):
@@ -543,37 +663,8 @@ def merge_spectra(measurements: list, overlap_regions: list, scaling_factors: li
                                                                data_y[2][bounds_dict['upper_overlap']['lower_idx_high']:bounds_dict['upper_overlap']['upper_idx_high']]
                                                                , bounds_error=False)(bounds_dict['upper_overlap']['x_axis_high'])
 
-    #testplot
     if testplots:
-        fig, ax = plt.subplots()
-
-        for i in range(len(measurements)):
-            ax.step(data_x[i], data_y[i], label = f"{measurements[i].gain}", color = color_map[measurements[i].gain])
-        
-        # Plot the overlap regions
-        ax.axvline(x = bounds_dict['lower_overlap']['lower_energy_low'], color=color_map['overlap_low'], linestyle='--')
-        ax.axvline(x = bounds_dict['lower_overlap']['upper_energy_low'], color=color_map['overlap_low'], linestyle='--')
-        ax.axvline(x = bounds_dict['lower_overlap']['lower_energy_high'], color='darkorange', linestyle='--')
-        ax.axvline(x = bounds_dict['lower_overlap']['upper_energy_high'], color='darkorange', linestyle='--')
-        ax.fill_betweenx([0, 5*max(data_y[0])], bounds_dict['lower_overlap']['lower_energy_low'], bounds_dict['lower_overlap']['upper_energy_low'],
-                         color='r', alpha=0.25, label='Overlap region 1') 
-
-        if len(measurements) == 3:
-            ax.axvline(x = bounds_dict['upper_overlap']['lower_energy_low'], color=color_map['overlap_high'], linestyle='--')
-            ax.axvline(x = bounds_dict['upper_overlap']['upper_energy_low'], color=color_map['overlap_high'], linestyle='--')
-            ax.axvline(x = bounds_dict['upper_overlap']['lower_energy_high'], color='darkblue', linestyle='--')
-            ax.axvline(x = bounds_dict['upper_overlap']['upper_energy_high'], color='darkblue', linestyle='--')
-            ax.fill_betweenx([0, 5*max(data_y[0])], bounds_dict['upper_overlap']['lower_energy_low'], bounds_dict['upper_overlap']['upper_energy_low'],
-                            color='b', alpha=0.25, label='Overlap region 2')
-
-        ax.legend()
-        ax.set_xscale('log')
-        ax.set_xlim(0.01,1000)
-        ax.set_ylim(0, 1.1*max(np.max(data_y[i]) for i in range(len(data_y))))
-
-        ax.set_title('Unscaled spectra - Overlap regions')
-
-        plt.show()
+        _merge_plot_unscaled(measurements, bounds_dict, show=True)
 
     # -----------------Gain matching-----------------
 
@@ -587,28 +678,13 @@ def merge_spectra(measurements: list, overlap_regions: list, scaling_factors: li
         scaling_factor_high = float(minimize(_gain_match_chi2, scaling_factors[1],
                                        args=(bounds_dict['upper_overlap']['y_axis_low'], bounds_dict['upper_overlap']['y_axis_high'])).x)
 
+    # Update the dictionary
+    bounds_dict['scaling_factor_low'] = scaling_factor_low
+    if len(measurements) == 3:
+        bounds_dict['scaling_factor_high'] = scaling_factor_high
+
     if testplots:
-        fig, ax = plt.subplots()
-
-        ax.step(data_x[0], np.multiply(data_y[0],scaling_factor_low), label = f"{measurements[0].gain}*{scaling_factor_low:.3f}", color = color_map[measurements[0].gain])
-        ax.step(data_x[1], data_y[1], label = f"{measurements[1].gain}", color = color_map[measurements[1].gain])
-        if len(measurements) == 3:
-            ax.step(data_x[2], np.multiply(data_y[2], scaling_factor_high), label = f"{measurements[2].gain}*{scaling_factor_high:.3f}", color = color_map[measurements[2].gain])
-
-        ax.axvline(x = bounds_dict['lower_overlap']['lower_energy_low'], color=color_map['overlap_low'], linestyle='--', label = 'Overlap region 1 - low')
-        ax.axvline(x = bounds_dict['lower_overlap']['upper_energy_low'], color=color_map['overlap_low'], linestyle='--')
-        ax.fill_betweenx([0, 5*max(data_y[0])], bounds_dict['lower_overlap']['lower_energy_low'], bounds_dict['lower_overlap']['upper_energy_low'], color='r', alpha=0.25)
-
-        if len(measurements) == 3:
-            ax.axvline(x = bounds_dict['upper_overlap']['lower_energy_low'], color=color_map['overlap_high'], linestyle='--', label = 'Overlap region 2 - low')
-            ax.axvline(x = bounds_dict['upper_overlap']['upper_energy_low'], color=color_map['overlap_high'], linestyle='--')
-            ax.fill_betweenx([0, 5*max(data_y[0])], bounds_dict['upper_overlap']['lower_energy_low'], bounds_dict['upper_overlap']['upper_energy_low'], color='b', alpha=0.25)
-        
-        ax.legend()
-        ax.set_xscale('log')
-        ax.set_xlim(0.01,1000)
-        ax.set_ylim(0, 1.5)
-        plt.show()
+        _merge_plot_scaled(measurements, bounds_dict, show=True)
 
     #-----------------Stitch the spectra together-----------------
 
@@ -630,24 +706,21 @@ def merge_spectra(measurements: list, overlap_regions: list, scaling_factors: li
         stitching_idx_high, _ = _find_nearest_idx_and_value(data_x[2], stitching_points[1])
         data_x[2] = data_x[2][stitching_idx_high:]
         data_y[2] = np.multiply(data_y[2][stitching_idx_high:], scaling_factor_high)
+    
+    # Put cut data into the dictionary
+    bounds_dict['stitched_x_low'] = data_x[0]
+    bounds_dict['stitched_y_low'] = data_y[0]
+    if len(measurements) == 3:
+        bounds_dict['stitched_x_mid'] = data_x[1]
+        bounds_dict['stitched_y_mid'] = data_y[1]
+        bounds_dict['stitched_x_high'] = data_x[2]
+        bounds_dict['stitched_y_high'] = data_y[2]
+    if len(measurements) == 2:
+        bounds_dict['stitched_x_high'] = data_x[1]
+        bounds_dict['stitched_y_high'] = data_y[1]
 
     if testplots:
-        fig, ax = plt.subplots()
-
-        ax.step(data_x[0],data_y[0], label = f"{measurements[0].gain}*{scaling_factor_low:.3f}", color = color_map[measurements[0].gain])
-        ax.step(data_x[1], data_y[1], label = f"{measurements[1].gain}", color = color_map[measurements[1].gain])
-        if len(measurements) == 3:
-            ax.step(data_x[2], data_y[2], label = f"{measurements[2].gain}*{scaling_factor_high:.3f}", color = color_map[measurements[2].gain])
-
-        ax.axvline(x = stitching_points[0], color=color_map['overlap_low'], linestyle='--', label = 'Stitching point 1', lw=2)
-        if len(measurements) == 3:
-            ax.axvline(x = stitching_points[1], color=color_map['overlap_high'], linestyle='--', label = 'Stitching point 2', lw=2)
-        
-        ax.legend()
-        ax.set_xscale('log')
-        ax.set_xlim(0.01,1000)
-        ax.set_ylim(0, 1.1*max(np.max(data_y[i]) for i in range(len(data_y))))
-        plt.show()
+        _merge_plot_stitched(measurements, bounds_dict, show=True)
 
     #-----------------Merge the spectra-----------------    
     merged_spectrum_x = np.concatenate((data_x[0], data_x[1]))
@@ -674,11 +747,14 @@ def merge_spectra(measurements: list, overlap_regions: list, scaling_factors: li
     merged_spectrum._particle = measurements[0].particle
     merged_spectrum._gain = 'merged'
 
+    merged_spectrum._mean_chord_length = measurements[0].mean_chord_length
+    merged_spectrum._max_chord_length = measurements[0].max_chord_length
+
     # What about date, live time, dead time, etc.?
 
     print(f'Spectra have been merged')
 
-    return merged_spectrum 
+    return merged_spectrum, bounds_dict
 
 def retrieve_original_spectrum(measurement):
     """ Retrieve the original spectrum again (from the original_data attribute)

@@ -318,6 +318,8 @@ def csv_output(measurement, output_path, name=False):
         name: Filename (optional, default: Spectrum name)
     """
 
+    print(measurement)
+
     if 'None' in measurement.detector:
         print('No detector information available. Please add detector information to the measurement object before saving the data.')
 

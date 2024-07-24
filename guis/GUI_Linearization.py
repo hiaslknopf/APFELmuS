@@ -21,8 +21,7 @@ if projekt_dir not in sys.path:
 from lib import Linearization, FileTranslator
 from guis.welcome_message import welcome_message
 
-#TODO: Theres some weird bug with deleting the old plots, Just hit buttons twice
-#TODO: Stacked generation of mV values
+#TODO: Theres some weird bug with deleting the old plots, Just hit buttons twice then it works
 #TODO: Cleaning up and commenting
 
 class GUI_Linearization:
@@ -112,11 +111,11 @@ class GUI_Linearization:
         self.delete_button.grid(row=3, column=0, sticky=tk.W)
         
         # Empty row
-        ttk.Label(self.specs_frame, text="").grid(row=4, column=0, sticky=tk.W)
+        ttk.Label(self.specs_frame, text="").grid(row=5, column=0, sticky=tk.W)
 
         # Cutoff frame
         self.cutoff_frame = ttk.Frame(self.specs_frame)
-        self.cutoff_frame.grid(row=5, column=0, columnspan=3, sticky=tk.W+tk.E)
+        self.cutoff_frame.grid(row=6, column=0, columnspan=3, sticky=tk.W+tk.E)
 
         ttk.Label(self.cutoff_frame, text="Spectrum cutoff:").grid(row=1, column=0, sticky=tk.W)
         ttk.Label(self.cutoff_frame, text="Front").grid(row=2, column=0, sticky=tk.W)
@@ -133,7 +132,7 @@ class GUI_Linearization:
 
         # Frame for buttons
         self.button_frame = ttk.Frame(self.left_panel, borderwidth=2, relief="solid")
-        self.button_frame.grid(row=5, column=0, columnspan=3, sticky=tk.W+tk.E)
+        self.button_frame.grid(row=7, column=0, columnspan=3, sticky=tk.W+tk.E)
 
         # Bottom Buttons
         self.run_button = ttk.Button(self.button_frame, text="RUN", command=self.run)
@@ -374,6 +373,9 @@ class GUI_Linearization:
         self.entry_mV_list.delete("1.0", tk.END)
         self.entry_cutoff_front.delete(0, tk.END)
         self.entry_cutoff_back.delete(0, tk.END)
+        self.entry_from.delete(0, tk.END)
+        self.entry_to.delete(0, tk.END)
+        self.entry_step.delete(0, tk.END)
 
         # Close all open tabs
         for i in range(0, len(self.notebook.tabs())):
