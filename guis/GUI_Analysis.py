@@ -43,7 +43,9 @@ class GUI_Analysis:
         self.create_plot_window()
 
         # Initialize the GUI plotting window
-        self.welcome_message() 
+        self.welcome_message()
+
+        self.last_browsed_path = os.path.dirname(os.path.abspath(__file__)) 
     
     def create_cal_widgets(self):
 
@@ -313,9 +315,18 @@ class GUI_Analysis:
         tab_text = tk.Text(self.notebook, width=40, height=20, wrap=tk.WORD, bg="white", state=tk.DISABLED)
         fig, ax, canvas = self.setup_plot(tab_text_str, tab_text)
 
+        # Set xlims if specified
+        if self.xlim_var.get():
+            xlim_from = float(self.entry_xlim_from.get())
+            xlim_to = float(self.entry_xlim_to.get())
+            ax.set_xlim(xlim_from, xlim_to)
+        else:
+            xlim_from = None
+            xlim_to = None
+
         # Plot the data
         Output.plot_single(campaign.measurements[self.meas_name], name=f'{self.meas_name}',
-                                   step=self.step_var.get(), y_F=False, y_D=False,
+                                   step=self.step_var.get(), y_F=False, y_D=False, xlim=[xlim_from, xlim_to],
                                    show_plot=False, gui=True, fig=fig, ax=ax)
              
         toolbar = NavigationToolbar2Tk(canvas, tab_text, pack_toolbar=False)
@@ -518,12 +529,9 @@ class GUI_Analysis:
         self.log_binning_check.config(state=tk.DISABLED)
         self.entry_num_bins.config(state=tk.DISABLED)
         self.step_check.state(['!selected'])
-        self.step_check.config(state=tk.DISABLED)
+        self.step_check.config(state=tk.NORMAL)
         self.plot_means_check.state(['!selected'])
         self.plot_means_check.config(state=tk.DISABLED)
-        self.xlim_check.state(['!selected'])
-        self.entry_xlim_from.config(state=tk.DISABLED)
-        self.entry_xlim_to.config(state=tk.DISABLED)
 
         # Lock the run button -> Plots the data automatically
         self.run_button.config(state=tk.DISABLED)
@@ -543,7 +551,6 @@ class GUI_Analysis:
                 self.check_vars[i].set(True)
             else:
                 self.check_vars[i].set(False)
-
     def toggle_cutoff(self):
         """ Check if a channel cutoff should be applied """
 
@@ -625,15 +632,16 @@ class GUI_Analysis:
             self.entry_num_bins.insert(0, self.num_bins_placeholder)
 
     def browse_file(self):
-        """ Browse for the file to be analyzed """
+        """ Browse for the file to be analyzed """    
 
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        file_path = filedialog.askopenfilename(initialdir=script_directory,
+        file_path = filedialog.askopenfilename(initialdir=self.last_browsed_path,
                                                filetypes=[("All files", "*.*"),
                                                           ("MCA files", "*.MCA"),
                                                           ("MAESTRO files", "*.Spe"),
                                                           ("ROOT simulation data", "*.root"),
                                                           ("Analyzed Microdosimetry data", "*.csv")])
+        
+        self.last_browsed_path = os.path.dirname(file_path)
         
         # Empty previous entries
         self.entry_file_path.delete(0, tk.END)
@@ -642,9 +650,11 @@ class GUI_Analysis:
     def browse_linearization(self):
         """ Browse for the linearization file """
 
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        cal_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("Linearization csv files", "*.csv"), ("All files", "*.*")])
+        cal_path = filedialog.askopenfilename(initialdir=self.last_browsed_path,
+                                              filetypes=[("Linearization csv files", "*.csv"), ("All files", "*.*")])
         
+        self.last_browsed_path = os.path.dirname(cal_path)
+
         # Check if this is an APFELmuS linearization file
         with open(cal_path, 'r') as f:
             lines = f.readlines()
@@ -659,8 +669,8 @@ class GUI_Analysis:
     def browse_plot_out(self):
         """ Browse for the output directory of the plot """
 
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        output_path = filedialog.askdirectory(initialdir=script_directory)
+        output_path = filedialog.askdirectory(initialdir=self.last_browsed_path)
+        self.last_browsed_path = output_path
 
         # Empty previous entries
         self.entry_plot_out.delete(0, tk.END)
@@ -669,8 +679,8 @@ class GUI_Analysis:
     def browse_csv_out(self):
         """ Browse for the output directory of the csv file """
 
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        output_path = filedialog.askdirectory(initialdir=script_directory)
+        output_path = filedialog.askdirectory(initialdir=self.last_browsed_path)
+        self.last_browsed_path = output_path
 
         # Empty previous entries
         self.entry_csv_out.delete(0, tk.END)
@@ -806,102 +816,105 @@ class GUI_Analysis:
                 print('Plotting index ' + str(index) + ' ' + str(option) + '\n')
                 
                 # Start fresh every time with the original spectrum - Shit performance but less errors
-                Spectrum.retrieve_original_spectrum(campaign.measurements[self.meas_name])
+                if self.extension == '.csv':
+                    print('Just print csv')
+                else:
+                    Spectrum.retrieve_original_spectrum(campaign.measurements[self.meas_name])
 
-                # Cut off spectrum (if selected)
-                if self.cutoff_var.get():
-                    if self.entry_cutoff.get() == "Enter cutoff value":
-                        raise ValueError("Cutoff value has to be specified")
-                    Spectrum.cutoff(campaign.measurements[self.meas_name], channels=int(self.entry_cutoff.get()))
+                    # Cut off spectrum (if selected)
+                    if self.cutoff_var.get():
+                        if self.entry_cutoff.get() == "Enter cutoff value":
+                            raise ValueError("Cutoff value has to be specified")
+                        Spectrum.cutoff(campaign.measurements[self.meas_name], channels=int(self.entry_cutoff.get()))
 
-                # Calibrate spectra (But the original ADC channels)
-                if index != 0:
-                    self.calibrate_specs(campaign)
+                    # Calibrate spectra (But the original ADC channels)
+                    if index != 0:
+                        self.calibrate_specs(campaign)
 
-                # Calculate mean values if not deselected
-                if self.plot_means_var.get() and index !=0:
-                    self.calculate_means(campaign)
+                    # Calculate mean values if not deselected
+                    if self.plot_means_var.get() and index !=0:
+                        self.calculate_means(campaign)
 
-                # Calculate selected representations
-                if index == 1: #f(y)
-                    Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
-                    Spectrum.probability_density(campaign.measurements[self.meas_name])
-                if index == 2: #F(y)
-                    Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
-                if index == 3: #d(y)
-                    Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
-                    Spectrum.probability_density(campaign.measurements[self.meas_name])
-                if index == 4: #yf(y) 
-                    Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
-                    Spectrum.probability_density(campaign.measurements[self.meas_name])
-                    Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
-                if index == 5: #yd(y)
-                    Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
-                    Spectrum.probability_density(campaign.measurements[self.meas_name])
-                    Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
-                
-                # Logarithmic binning (if selected)
-                if self.log_binning_var.get() and index != 0:
-                    if self.entry_num_bins.get() == self.num_bins_placeholder: # Default number of bins=50
-                        messagebox.showinfo("Number of bins", "Assumed 50 log bins")
-                        num_bins = 50
+                    # Calculate selected representations
+                    if index == 1: #f(y)
+                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+                        Spectrum.probability_density(campaign.measurements[self.meas_name])
+                    if index == 2: #F(y)
+                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+                    if index == 3: #d(y)
+                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
+                        Spectrum.probability_density(campaign.measurements[self.meas_name])
+                    if index == 4: #yf(y) 
+                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+                        Spectrum.probability_density(campaign.measurements[self.meas_name])
+                        Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
+                    if index == 5: #yd(y)
+                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
+                        Spectrum.probability_density(campaign.measurements[self.meas_name])
+                        Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
+                    
+                    # Logarithmic binning (if selected)
+                    if self.log_binning_var.get() and index != 0:
+                        if self.entry_num_bins.get() == self.num_bins_placeholder: # Default number of bins=50
+                            messagebox.showinfo("Number of bins", "Assumed 50 log bins")
+                            num_bins = 50
+                        else:
+                            num_bins = int(self.entry_num_bins.get())
+                        Spectrum.logarithmic_binning(campaign.measurements[self.meas_name], num_bins)
+                    
+                    # Normalize spectra to area=1 (except for the original and the F(y) spectrum)
+                    if not index in [0,2]:
+                        Spectrum.normalize_spectrum(campaign.measurements[self.meas_name])
+                    
+                    # Setup plot canvas
+                    fig, ax, canvas = self.setup_plot(tab_name, tab_text)
+
+                    # Save the plot and csv output (if selected)
+                    if self.save_plots_var.get():
+                        output_path = self.entry_plot_out.get()
+                        if output_path == "":
+                            raise ValueError("Output path has to be specified")
                     else:
-                        num_bins = int(self.entry_num_bins.get())
-                    Spectrum.logarithmic_binning(campaign.measurements[self.meas_name], num_bins)
-                
-                # Normalize spectra to area=1 (except for the original and the F(y) spectrum)
-                if not index in [0,2]:
-                    Spectrum.normalize_spectrum(campaign.measurements[self.meas_name])
-                
-                # Setup plot canvas
-                fig, ax, canvas = self.setup_plot(tab_name, tab_text)
-
-                # Save the plot and csv output (if selected)
-                if self.save_plots_var.get():
-                    output_path = self.entry_plot_out.get()
-                    if output_path == "":
-                        raise ValueError("Output path has to be specified")
-                else:
-                    output_path = False
-                
-                if self.save_csv_var.get():
-                    output_csv = self.entry_csv_out.get()
-                    Output.csv_output(campaign.measurements[self.meas_name], output_csv, name=f'{self.meas_name}_{self.plot_options[index]}')
-                    if output_csv == "":
-                        raise ValueError("Output path has to be specified")
-                
-                # Set the x-axis limits (if selected)
-                if index == 0:
-                    scale = 'lin'
-                    xlim = [0, campaign.measurements[self.meas_name].num_channels]
-                else:
-                    scale = 'log'
-                    if self.xlim_var.get():
-                        xlim = [float(self.entry_xlim_from.get()), float(self.entry_xlim_to.get())]
+                        output_path = False
+                    
+                    if self.save_csv_var.get():
+                        output_csv = self.entry_csv_out.get()
+                        Output.csv_output(campaign.measurements[self.meas_name], output_csv, name=f'{self.meas_name}_{self.plot_options[index]}')
+                        if output_csv == "":
+                            raise ValueError("Output path has to be specified")
+                    
+                    # Set the x-axis limits (if selected)
+                    if index == 0:
+                        scale = 'lin'
+                        xlim = [0, campaign.measurements[self.meas_name].num_channels]
                     else:
-                        xlim = [0.1, 1000]
+                        scale = 'log'
+                        if self.xlim_var.get():
+                            xlim = [float(self.entry_xlim_from.get()), float(self.entry_xlim_to.get())]
+                        else:
+                            xlim = [0.1, 1000]
 
-                # Display the mean values in the plot (if selected)
-                if self.plot_means_var.get() and index != 0:
-                    # Plot the mean values
-                    y_F = self.y_F
-                    y_D = self.y_D
+                    # Display the mean values in the plot (if selected)
+                    if self.plot_means_var.get() and index != 0:
+                        # Plot the mean values
+                        y_F = self.y_F
+                        y_D = self.y_D
+                    
+                    else:
+                        y_F = False
+                        y_D = False
+
+                    # Finally, plot the data
+                    Output.plot_single(campaign.measurements[self.meas_name], name=f'{self.meas_name}_{self.plot_options[index]}', output_path=output_path,
+                                    step=self.step_var.get(), y_F=y_F, y_D=y_D, scale=scale, xlim=xlim, 
+                                    show_plot=False, gui=True, fig=fig, ax=ax)
                 
-                else:
-                    y_F = False
-                    y_D = False
+                    toolbar = NavigationToolbar2Tk(canvas, tab_text, pack_toolbar=False)
+                    toolbar.grid(row=1, column=0, padx=10, pady=10, sticky=tk.S)
+                    canvas.draw()
 
-                # Finally, plot the data
-                Output.plot_single(campaign.measurements[self.meas_name], name=f'{self.meas_name}_{self.plot_options[index]}', output_path=output_path,
-                                   step=self.step_var.get(), y_F=y_F, y_D=y_D, scale=scale, xlim=xlim, 
-                                   show_plot=False, gui=True, fig=fig, ax=ax)
-             
-                toolbar = NavigationToolbar2Tk(canvas, tab_text, pack_toolbar=False)
-                toolbar.grid(row=1, column=0, padx=10, pady=10, sticky=tk.S)
-                canvas.draw()
-
-                # Store the new plot objects in the dictionary
-                self.plot_objects[tab_name] = (fig, ax, canvas)
+                    # Store the new plot objects in the dictionary
+                    self.plot_objects[tab_name] = (fig, ax, canvas)
         else:
             # If a checkmark is unselected between pressing RUN, remove the tab from the notebook
             tab_name = f"{option}"
@@ -963,20 +976,26 @@ class GUI_Analysis:
             # get particle and material and set dropdowns
             self.detector_var.set(campaign.measurements[self.meas_name].detector)
             self.particle_var.set(campaign.measurements[self.meas_name].particle)
-
-        # Check selected plot options
-        selected_plots = []
-        for i in range(len(self.plot_options)):
-            selected_plots.append(self.check_vars[i].get())
-        if not any(selected_plots):
-            messagebox.showinfo("No plot selected", "No plot selected")
-        else:
-            #Iterate through the selected plot options
-            for i, option in enumerate(self.plot_options):
-                self.show_plot(i, option, campaign)
         
-        # Write the output of the analysis to the textbox
-        self.write_output()
+        elif self.extension == '.csv':
+            campaign.read_file(self.datafile)
+            self.setup_csv_plot(campaign)
+            self.plot_csv_data(campaign)
+
+        if not self.extension == '.csv':
+            # Check selected plot options
+            selected_plots = []
+            for i in range(len(self.plot_options)):
+                selected_plots.append(self.check_vars[i].get())
+            if not any(selected_plots):
+                messagebox.showinfo("No plot selected", "No plot selected")
+            else:
+                #Iterate through the selected plot options
+                for i, option in enumerate(self.plot_options):
+                    self.show_plot(i, option, campaign)
+            
+            # Write the output of the analysis to the textbox
+            self.write_output()
         
     def write_output(self):
         """ Write the output of the analysis to the textbox """

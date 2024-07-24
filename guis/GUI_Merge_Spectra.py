@@ -31,6 +31,7 @@ from guis.welcome_message import welcome_message
 # Gscheide guesses for initial Parameter
 # Plots schauen Kacke aus
 # Iwie control panel für binning und normalization
+# Gscheider Text output während rechnen und nachher usw
 
 class GUI_Merge:
 
@@ -53,6 +54,8 @@ class GUI_Merge:
 
         # Initialize the GUI
         self.welcome_message()
+
+        self.last_browsed_path = os.path.dirname(__file__)
     
     ################################################################
     #----------------------GUI SETUP-------------------------------#
@@ -424,11 +427,13 @@ class GUI_Merge:
     def browse_input_files(self):
         """ Browse for two or three analyzed .csv files to merge """
 
-        script_dir = os.path.dirname(__file__)
-        file_path = filedialog.askopenfilenames(initialdir=script_dir,
+        file_path = filedialog.askopenfilenames(initialdir=self.last_browsed_path,
                                                 title="Select the input files",
                                                 filetypes=[("Analyzed CSV files", "*.csv")],
                                                 multiple=True)
+        
+        normpath = [os.path.normpath(file) for file in file_path]
+        self.last_browsed_path = os.path.dirname(normpath[0])
 
         self.num_files = len(file_path)
 
@@ -508,12 +513,13 @@ class GUI_Merge:
     def browse_output_file(self):
         """ Browse for a location to save the merged spectrum """
 
-        script_dir = os.path.dirname(__file__)
-        file_path = filedialog.asksaveasfilename(initialdir=script_dir,
+        file_path = filedialog.asksaveasfilename(initialdir=self.last_browsed_path,
                                                 title="Select the output file",
                                                 filetypes=[("Analyzed CSV files", "*.csv")],
                                                 defaultextension=".csv",
                                                 confirmoverwrite=True)
+        
+        self.last_browsed_path = os.path.dirname(file_path)
         
         return file_path
 

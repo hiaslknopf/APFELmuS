@@ -29,6 +29,8 @@ class GUI_FileTranslator:
         # Load the APFELmuS logo
         root.iconbitmap("ressources/logo.ico")
 
+        self.last_browsed_path = os.path.dirname(os.path.abspath(__file__))
+
     def create_widgets(self):
 
         # Frame for file browsing
@@ -129,15 +131,22 @@ class GUI_FileTranslator:
         self.particle_var.set("proton")
     
     def browse_spe_file(self):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        # Creating a list from the tuple maybe solves the curly brackets issue?
-        file_path = list(filedialog.askopenfilename(initialdir=script_directory, filetypes=[("MAESTRO files", "*.Spe")], multiple=True))
+        # Please dont put spaces into filenames --> Curly bracket issue :/
+
+        file_path = list(filedialog.askopenfilename(initialdir=self.last_browsed_path,
+                                                    filetypes=[("MAESTRO files", "*.Spe")], multiple=True))
+        
+        self.last_browsed_path = os.path.dirname(file_path[0])
+
         self.entry_file_path.delete(0, tk.END)
         self.entry_file_path.insert(0, file_path)
     
     def browse_linearization_file(self):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("Linearization files", "*.csv")], multiple=False)
+        file_path = filedialog.askopenfilename(initialdir=self.last_browsed_path,
+                                               filetypes=[("Linearization files", "*.csv")], multiple=False)
+        
+        self.last_browsed_path = os.path.dirname(file_path)
+
         self.entry_linearization_path.delete(0, tk.END)
         self.entry_linearization_path.insert(0, file_path)
 

@@ -186,10 +186,10 @@ def plot_single(measurement, name:str=False, output_path:str=False,
         ax.set_ylim(0.0,1.1*max(y))
     
     if y_F:
-        y_F_plot = ax.axvline(y_F, color='blue', linestyle='--', label='Frequency mean y_F', alpha=0.75)
+        y_F_plot = ax.axvline(y_F, color='blue', linestyle='--', label=r'$y_F=$'+f'{y_F:.2f}'+' keV/µm', alpha=0.75)
         lines.append(y_F_plot)
     if y_D:
-        y_D_plot = ax.axvline(y_D, color='forestgreen', linestyle='--', label='Dose mean y_D', alpha=0.75)
+        y_D_plot = ax.axvline(y_D, color='forestgreen', linestyle='--', label=r'$y_D=$'+f'{y_F:.2f}'+' keV/µm', alpha=0.75)
         lines.append(y_D_plot)
 
     ax.set_xlabel(labels_dict['x_labels'][measurement._x_axis])

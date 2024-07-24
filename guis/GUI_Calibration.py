@@ -32,6 +32,8 @@ class GUI_Calibration:
 
         # Load the APFELmuS logo
         root.iconbitmap("ressources/logo.ico")
+
+        self.last_browsed_path = os.path.dirname(os.path.abspath(__file__))
     
     def create_sliders(self):
         # Sliders
@@ -171,8 +173,11 @@ class GUI_Calibration:
         self.entry_file_path.config(textvariable=self.file_var)
 
     def browse_file(self):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("All files", "*.*"),("MCA files", "*.MCA"),("MAESTRO files", "*.Spe")])
+        file_path = filedialog.askopenfilename(initialdir=self.last_browsed_path,
+                                               filetypes=[("All files", "*.*"),("MCA files", "*.MCA"),("MAESTRO files", "*.Spe")])
+        
+        self.last_browsed_path = os.path.dirname(file_path)
+
         self.entry_file_path.delete(0, tk.END)
         self.entry_file_path.insert(0, file_path)
 

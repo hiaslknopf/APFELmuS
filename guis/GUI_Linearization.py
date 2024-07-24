@@ -37,6 +37,8 @@ class GUI_Linearization:
         # Load the APFELmuS logo
         root.iconbitmap("ressources/logo.ico")
 
+        self.last_browsed_path = os.path.dirname(os.path.abspath(__file__))
+
     def create_widgets(self):
         self.left_panel = ttk.Frame(root)
         self.left_panel.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W+tk.E+tk.N+tk.S)
@@ -210,14 +212,20 @@ class GUI_Linearization:
         canvas.get_tk_widget().grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
 
     def browse_pulser_spec(self):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("MAESTRO files", "*.Spe"), ("MAESTRO peak report", "*.Rpt")], multiple=False)
+        file_path = filedialog.askopenfilename(initialdir=self.last_browsed_path,
+                                               filetypes=[("MAESTRO files", "*.Spe"), ("MAESTRO peak report", "*.Rpt")], multiple=False)
+        
+        self.last_browsed_path = os.path.dirname(file_path)
+
         self.entry_pulser_file_path.delete(0, tk.END)
         self.entry_pulser_file_path.insert(0, file_path)
 
     def browse_pulser_cal(self):
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        file_path = filedialog.askopenfilename(initialdir=script_directory, filetypes=[("Pulser Calibration", "*.csv")], multiple=True)
+        file_path = filedialog.askopenfilename(initialdir=self.last_browsed_path,
+                                               filetypes=[("Pulser Calibration", "*.csv")], multiple=True)
+        
+        self.last_browsed_path = os.path.dirname(file_path)
+
         self.entry_cal_path.delete(0, tk.END)
         self.entry_cal_path.insert(0, file_path)
 
@@ -317,7 +325,6 @@ class GUI_Linearization:
             messagebox.showwarning("Warning",
                                    f"The number of peaks found ({len(self.peaks)}) does not match the number of mV values ({len(self.mV_list)})")
         
-        
         # Fit the linearization curve
         columns = ['CHANNEL', 'INPUT [mV]']
         self.linearization_df = pd.DataFrame(index=np.arange(self.num_channels), columns=columns)
@@ -385,7 +392,11 @@ class GUI_Linearization:
         self.add_initial_tab()
 
     def browse_mV_list(self):
-        file_path = filedialog.askopenfilename(initialdir=os.path.dirname(os.path.abspath(__file__)), filetypes=[("Text files", "*.txt")])
+        file_path = filedialog.askopenfilename(initialdir=self.last_browsed_path,
+                                               filetypes=[("Text files", "*.txt")])
+        
+        self.last_browsed_path = os.path.dirname(file_path)
+
         self.get_voltages_from_file(file_path)
 
     def get_voltages_from_file(self, file_path):
