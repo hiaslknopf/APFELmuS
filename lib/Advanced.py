@@ -13,8 +13,25 @@ from sklearn.preprocessing import normalize
     Take this with a grain of salt, there's some of half-baked stuff in here. """
 
 def remove_noise(measurement, background_measurement):
-    """ Remove noise from a measurement by subtracting a background measurement (scaled by the relative live time) """
-    raise NotImplementedError
+    """ Remove noise from a measurement by subtracting a background measurement (scaled by the relative live time)
+        Should be used directly on the linear spectrum f(Channel)"""
+    
+    if measurement.y_axis != 'COUNTS' or background_measurement.y_axis != 'COUNTS':
+        raise ValueError('Make sure to use the original linear spectrum f(Channel)')
+    
+    if measurement.live_time == 0.0 or background_measurement.live_time == 0.0:
+        raise ValueError('There is no live time information available')
+    
+    if measurement.real_time == 0.0 or background_measurement.real_time == 0.0:
+        raise ValueError('There is no real time information available')
+
+    scaling_factor = measurement.real_time / background_measurement.real_time
+
+    measurement.data[measurement.y_axis] = measurement.data[measurement.y_axis] - scaling_factor * background_measurement.data[background_measurement.y_axis]
+    measurement.data.loc[measurement.data[measurement.y_axis] < 0, measurement.y_axis] = 0
+
+    print(f'Noise removed from spectrum: {measurement.name}')
+    print(f'Total area removed: {np.sum(scaling_factor * background_measurement.data[background_measurement.y_axis])}')
 
 def material_conversion(measurement, from_material, to_material, density=1.0, tables='SRIM'):
     """ Convert a spectrum from one material to another using a binwise comparison of stopping power tables """

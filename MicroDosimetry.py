@@ -410,6 +410,9 @@ class Measurement():
             self._particle = particle
         else:
             raise NotImplementedError(f'In {file}: Particle type {particle} is not a viable option.')
+    
+        self._live_time = live_time
+        self._real_time = real_time
 
     def read_MCA_file(self, file):
         """ Read in information from a given MCA file. """
