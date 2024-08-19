@@ -31,7 +31,7 @@ class GUI_Linearization:
 
     def __init__(self, root):
         self.root = root
-        self.root.title("APFELmuS - Calibration File Generator")
+        self.root.title("APFELmuS - Linearization File Generator")
         self.create_widgets()
 
         # Load the APFELmuS logo
@@ -145,6 +145,12 @@ class GUI_Linearization:
         self.save_button.grid(row=1, column=0, sticky=tk.W+tk.E, ipadx=20, ipady=10)
         self.reset_button = ttk.Button(self.button_frame, text="Reset GUI", command=self.reset_GUI)
         self.reset_button.grid(row=1, column=1, sticky=tk.W+tk.E, ipadx=20, ipady=10)
+
+        # Reset cutoff inputs
+        self.entry_cutoff_back.insert(0, '0')
+        self.entry_cutoff_front.insert(0, '0')
+        self.entry_cutoff_back.config(state='enabled')
+        self.entry_cutoff_front.config(state='enabled')
 
         # Right panel for plots and buttons
         self.right_panel = ttk.Frame(root, borderwidth=2, relief="solid")

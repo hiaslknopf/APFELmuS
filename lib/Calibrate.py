@@ -15,6 +15,26 @@ from scipy.optimize import curve_fit
 def _fermi_func(h, A, B, C):
       return A / (1+np.exp(B * (h-C)))
 
+def _get_nearest_range(table, array, value):
+    #Find closest range bigger than a given value in stopping power table
+
+    lower = array[bisect_left(array, value) - 1]
+    closest_ind = table.index[table['range'] == lower].tolist()[0]
+
+    if value <= array[0]:
+        closest_ind = 0
+    
+    closest_range = table.iloc[closest_ind]['range']
+    after_closest_range = table.iloc[closest_ind+1]['range']
+    closest_dEdx = table.iloc[closest_ind]['dE/dx']
+    after_closest_dEdx = table.iloc[closest_ind+1]['dE/dx']
+    closest_energy = table.iloc[closest_ind]['energy']
+    after_closest_energy = table.iloc[closest_ind+1]['energy']
+
+    return {'closest_range': closest_range, 'after_closest_range': after_closest_range,
+            'closest_dEdx': closest_dEdx, 'after_closest_dEdx': after_closest_dEdx,
+            'closest_energy': closest_energy, 'after_closest_energy': after_closest_energy}
+
 def _plot_edge_calibration(dict, ax=None):
 
     h = dict['h']
@@ -264,7 +284,8 @@ def get_stopping_power(measurement, chord_length:str='mean', database:str='SRIM'
         ################################
         # PREPARE DATA
         ################################
-        table = pd.read_csv(f"{ressources_path}/{database}_{particle}_{material}.csv", sep=',', skiprows=5, names=['energy', 'range', 'dE/dx'])
+        table = pd.read_csv(f"{ressources_path}/{database}_{particle}_{material}.csv",
+                            sep=',', skiprows=5, names=['energy', 'range', 'dE/dx'])
         table['dE/dx'] = table['dE/dx'].multiply(densities[material])
 
         interp_range = np.arange(0, 100 + precision, precision) #From 0 to 100 µm
@@ -272,25 +293,8 @@ def get_stopping_power(measurement, chord_length:str='mean', database:str='SRIM'
 
         range_values = table['range'].to_numpy()
 
-        def get_nearest_table_values(array, value):
-            #Find closest range bigger than a given value in table
-            lower = range_values[bisect_left(array, value) - 1]
-            closest_ind = table.index[table['range'] == lower].tolist()[0]
-
-            if ran <= range_values[0]:
-                closest_ind = 0
-            
-            closest_range = table.iloc[closest_ind]['range']
-            after_closest_range = table.iloc[closest_ind+1]['range']
-            closest_dEdx = table.iloc[closest_ind]['dE/dx']
-            after_closest_dEdx = table.iloc[closest_ind+1]['dE/dx']
-            closest_energy = table.iloc[closest_ind]['energy']
-            after_closest_energy = table.iloc[closest_ind+1]['energy']
-        
-            return {'closest_range': closest_range, 'after_closest_range': after_closest_range, 'closest_dEdx': closest_dEdx, 'after_closest_dEdx': after_closest_dEdx, 'closest_energy': closest_energy, 'after_closest_energy': after_closest_energy}
-
         for ran in interp_range:
-            values = get_nearest_table_values(range_values, ran)
+            values = _get_nearest_range(table, range_values, ran)
 
             if ran < range_values[0]:
                 interp_dEdx.append(math.nan)
@@ -320,7 +324,7 @@ def get_stopping_power(measurement, chord_length:str='mean', database:str='SRIM'
         #print(f"Residual range + chord length: {range_upper} µm")
 
         #Find energy at R'
-        values = get_nearest_table_values(range_values, range_lower)
+        values = _get_nearest_range(table, range_values, range_lower)
         exit_energy = (range_lower - values['closest_range']) / (values['after_closest_range'] - values['closest_range']) * (values['after_closest_energy']-values['closest_energy']) + values['closest_energy']
         if database == 'ICRU':
             exit_energy *= nucleons
@@ -329,7 +333,7 @@ def get_stopping_power(measurement, chord_length:str='mean', database:str='SRIM'
         #print(f"Energy at R': {exit_energy} keV")
 
         #Find energy at R'+t
-        values = get_nearest_table_values(range_values, range_upper)
+        values = _get_nearest_range(table, range_values, range_upper)
         entry_energy = (range_upper - values['closest_range']) / (values['after_closest_range'] - values['closest_range']) * (values['after_closest_energy']-values['closest_energy']) + values['closest_energy']
         if database == 'ICRU':
             entry_energy *= nucleons
