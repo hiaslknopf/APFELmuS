@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 
-""" This module contains all the functions for the manipulation of spectra """
+""" Collection of functions for the manipulation of spectra, i.e. the actual analysis of the data """
 
 def _find_nearest_idx_and_value(array, value):
     array = np.asarray(array)

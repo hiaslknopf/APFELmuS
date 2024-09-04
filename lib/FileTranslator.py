@@ -9,9 +9,7 @@ from datetime import datetime
 
 import numpy as np
 
-""" This is a translator tool that converts spectrum files (.Spe) and linearization files (.csv) into the current version of MCA files (.MCA) for MicroDosimetry analysis.
-It is currently designed to work with ORTEC MAESTRO .Spe output files.
-"""
+""" This is a translator tool that converts spectrum files (currently only MAESTRO .Spe) and APFELmuS linearization files (.csv) into the current version of APFELmuS MCA files (.MCA) for analysis with APFELmuS. """
 
 def _read_MAESTRO_file(filepath):
     """ Read MAESTRO file into dataframes
@@ -43,6 +41,8 @@ def _read_MAESTRO_file(filepath):
 def _read_MAESTRO_rpt_file(filepath):
     """ Read MAESTRO .rpt report containing peak information
     and return the centroid values as an arrays
+
+    Used by the APFELmuS GUI to extract peak information
 
     Args:
         filepath

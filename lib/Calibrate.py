@@ -10,7 +10,7 @@ import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-""" Everything concerning the calibration, geometry and the energy axis of spectra """
+""" Collection of functions concerning the calibration, geometry and the energy axis of spectra """
 
 def _fermi_func(h, A, B, C):
       return A / (1+np.exp(B * (h-C)))

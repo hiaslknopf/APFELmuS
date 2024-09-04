@@ -7,7 +7,7 @@ import math
 import numpy as np
 import os
 
-""" This module contains functions for plotting and saving the results of the microdosimetric spectra. """
+""" Collection of functions for plotting and saving the results of the microdosimetric analysis. """
 
 labels_dict = {
     'x_labels':{

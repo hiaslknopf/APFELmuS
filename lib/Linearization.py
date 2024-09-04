@@ -14,8 +14,10 @@ from lib import FileTranslator
 
 #TODO: Test this also for LO; MID; HIGH
 
-""" This script contains a helper tool to generate a calibration file (Channel -> mV) needed for the linearity/calibration procedure.
-Necessary inpus are a Pulser calibration (mV goal vs mV measured) and 1 or more MCA linearization spectra (Gaussian peaks for different mV values).
+""" Helper tool to generate an APFELmuS linearization file (.csv) (Channel -> mV) needed for the linearization procedure.
+Necessary inputs: One or more MCA linearization spectra (Gaussian peaks for different mV values), the list of mV values at the test input, optionally a pulser calibration (mV goal vs mV measured)
+
+This script can be used for 1,2 or 3 gain settings (HI, MID, LOW) at once in a multiamp setup to create a shared linearization file.
 """
 
 # Include whereever this script is located

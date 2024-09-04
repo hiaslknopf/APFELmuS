@@ -13,7 +13,14 @@ __email__ = "matthias.knopf@tuwien.ac.at"
 __date__ = "2024"
 
 class MicroDosimetry():
-    """ Class for analysing microdosmetry measurement campaigns (consisting of one or more spectra). """
+    """ Class for analysing microdosimetry measurement campaigns (consisting of one or more pulse height spectra)
+        MicroDosimetry handles basic input and output operations.
+
+        The data is stored in a dictionary with the filename as the key and the corresponsing measurement object as its value.
+
+        It is highly advised to store and read the data in a per folder basis.
+        This way the data is always stored nicely in a structured way and several campaigns can be analysed in parallel.    
+    """
 
     def __init__(self):
         """ Create a dictionary for storing an identifier (filename) with a measurement dataframe"""
@@ -173,7 +180,8 @@ class MicroDosimetry():
             Measurement.attach_mca_info(self, measurement, info_dict)
 
 class Measurement():
-    """ Actual analysis class. One instance per file in analysis folder aka one entry in measurement dict aka a single spectrum """
+    """ Measurement contains the actual read functions for the different file types and sets up the measurement objects to be stored in the MicroDosimetry class.
+    One instance per file in the analysis folder aka one entry in measurement dict aka a single spectrum. """
 
     def __init__(self, num_channels=0, date = datetime.now(), detector=None, gain=None) -> None: 
         """ Set up a measurement object containing all info for a given spectrum """
