@@ -1,6 +1,6 @@
 APFELmuS output: Pulse height spectrum
 proton on silicon
-03/12/24 08:37:58
+05/26/24 21:35:07
 
 E [keV];Counts [a.u.]
 0.41201591;1
@@ -4102,7 +4102,7 @@ E [keV];Counts [a.u.]
 
 --------------------------------------------------------------------------------
 NAME	exp_148.2MeV_proton_si_10um
-DATE	03/12/24 08:37:58
+DATE	05/26/24 21:35:07
 PARTICLE	proton
 DETECTOR	silicon
 GAIN	SIMULATION

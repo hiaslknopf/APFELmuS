@@ -42,12 +42,14 @@ def _lin_2_log(measurement, n_bins_per_decade: int):
     #Get metrics of x-axis
     start = measurement.data[x_val >= 0.0][measurement.x_axis].values[0]
     stop = x_val.max()
-    num_decades = np.abs(np.log10(stop)-np.log10(start))
+    
 
     if start == 0.0:
         start = 0.0001 #For some ROOT data
     if start == None:
         start = 0.0001 #For extrapolated data
+
+    num_decades = np.abs(np.log10(stop)-np.log10(start))
     
     #Create log bins
     log_bins_x = np.logspace(np.log10(start), np.log10(stop), num=int(np.ceil(num_decades*n_bins_per_decade)), endpoint=True)

@@ -20,6 +20,11 @@ class MicroDosimetry():
 
         self.measurements = {} #Dict for filenames + data in analysis folder
 
+        self._apfelmus_csv_indicator = 'APFELmuS'
+        self._gate_txt_indicator = 'First line is two numbers'
+
+        self._accepted_file_extensions = ['.MCA', '.root', '.csv', '.txt']
+
     def get_files_with_format(self, folderpath):
         """ Console printout of the folder content
             Only for MCA, ROOT and uDos files containing linearized spectrum or microdosimetric data
@@ -30,7 +35,24 @@ class MicroDosimetry():
 
         folderpath = os.path.normpath(folderpath)
         files = glob('{}/*.*'.format(folderpath))
-        files = [file.split(os.path.sep)[-1] for file in files if file.endswith('.MCA') or file.endswith('.root') or file.endswith('.csv')]
+        files = [file.split(os.path.sep)[-1] for file in files if file.endswith('.MCA') or file.endswith('.root') or file.endswith('.csv') or file.endswith('.txt')]
+
+        # Check if .csv and .txt files are uDos files
+        for file in files:
+            if file.endswith('.csv'):
+                with open(f'{folderpath}/{file}', 'r') as f:
+                    lines = f.readlines()
+                    if not self._apfelmus_csv_indicator in lines[0]:
+                        files.remove(file)
+                f.close()
+        
+            if file.endswith('.txt'):
+                with open(f'{folderpath}/{file}', 'r') as f:
+                    lines = f.readlines()
+                    if not self._gate_txt_indicator in lines[0]:
+                        files.remove(file)
+                f.close()
+
 
         print(f'\nFolder content of {folderpath}:')
         for i, file in enumerate(files):
@@ -50,9 +72,14 @@ class MicroDosimetry():
         files = glob('{}/*'.format(folderpath))
 
         # Only .MCA, .root and .csv files (linearized microdosimetric data)
-        files = [file for file in files if file.endswith('.MCA') or file.endswith('.root') or file.endswith('.csv')]
+        accepted_files = []
 
         for file in files:
+            _, extension = os.path.splitext(file)
+            if extension in self._accepted_file_extensions:
+                accepted_files.append(file)
+
+        for file in accepted_files:
             self.read_file(file)
 
     def read_file(self, file):
@@ -80,8 +107,18 @@ class MicroDosimetry():
             #Check if it is a uDos file
             with open(file, 'r') as f:
                 lines = f.readlines()
-                if 'APFELmuS' in lines[0]:
+                if self._apfelmus_csv_indicator in lines[0]:
                     measurement.read_uDos_analysis(file)
+                else:
+                    pass
+        
+        elif extension == '.txt':
+
+            # Check if it is a GATE Energy deposition simulation file
+            with open(file, 'r') as f:
+                lines = f.readlines()
+                if self._gate_txt_indicator in lines[0]:
+                    measurement.read_GATE_txt_file(file)
                 else:
                     pass
 
@@ -482,6 +519,66 @@ class Measurement():
             self._mean_chord_length = np.mean(track_data)
             self._max_chord_length = np.max(track_data)
 
+    def read_GATE_txt_file(self, file):
+        """ Read in information from a GATE Energy deposition simulation file. """
+
+        file = os.path.normpath(file)
+        with open(file, 'r') as f:
+            lines = f.readlines()
+
+            # Check if it is actually a histogram file
+            if not lines[8].startswith('2'):
+                raise IOError('This file does not contain a histogram')
+
+            # Get the number of channels
+            for line in lines:
+                if line.startswith('# Number of bins'):
+                    num_channels = int(line.split()[5])
+                    break
+            
+            # Get min and max energy
+            # ACHTUNG UNTERE GRENZEN --> #TODO: Check how you do this otherwise
+            min_energy = float(lines[8].split()[1])
+            max_energy = float(lines[num_channels+7].split()[0])
+        
+            print(f'Min energy: {min_energy} keV')
+            print(f'Max energy: {max_energy} keV')
+            print(f'Number of channels: {num_channels}')
+
+
+            # Get the date
+            date = datetime.fromtimestamp(os.path.getmtime(file)).strftime('%m/%d/%y %H:%M:%S')
+
+            # Set attributes
+            self._date = date
+            self._num_channels = num_channels
+            self._detector = 'None (Not yet attached)'
+            self._gain = 'SIMULATION'
+            self._particle = 'None (Not yet attached)'
+
+            # Read the data
+            self._data = pd.read_csv(file, skiprows=9, sep=' ', header=None, usecols=[0, 2])
+            self._original_data = pd.read_csv(file, skiprows=9, sep=' ', header=None, usecols=[0, 2])
+            self._abs_filepath = file
+
+            # Insert min energy at the beginning
+            self._data.loc[-1] = [min_energy, 0]
+            self._data.index = self._data.index + 1
+            self._data = self._data.sort_index()
+
+            self._original_data.loc[-1] = [min_energy, 0]
+            self._original_data.index = self._original_data.index + 1
+            self._original_data = self._original_data.sort_index()
+
+            # Transform energy from MeV to keV
+            self._data[0] = self._data[0] * 1000
+            self._original_data[0] = self._original_data[0] * 1000
+
+            self._x_axis = 'ENERGY'
+            self._y_axis = 'COUNTS'
+
+            self._data.columns = [self._x_axis, self._y_axis]
+
     def read_uDos_analysis(self, file):
         """ Read in information from an already analysed uDos file (*csv). """
 
@@ -552,3 +649,17 @@ class Measurement():
                 #For some reason you need to create this twice so the df are not linked to each other
                 self._data = pd.DataFrame({measurement.x_axis: np.multiply(bins, 1000), measurement.y_axis: hist_data})
                 self._original_data = pd.DataFrame({measurement.x_axis: np.multiply(bins, 1000), measurement.y_axis: hist_data})
+    
+    def attach_gate_txt_info(self, measurement, info_dict):
+        """ Attach information to a GATE Energy deposition simulation file measurement object.
+        
+        Args:
+            measurement: Measurement object to be altered
+            info_dict: Dictionary containing the information to be attached (_particle, _detector, _num_channels)
+        """
+
+        if measurement.gain != 'SIMULATION':
+            raise ValueError('This function is only for GATE Energy deposition simulation files')
+
+        for key, value in info_dict.items():
+            setattr(measurement, key, value)
