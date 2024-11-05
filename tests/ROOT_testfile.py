@@ -16,7 +16,7 @@ file = 'exp_148.2MeV_proton_si_10um'
 
 #Set up a new measurement campaign
 campaign1 = MicroDosimetry()
-campaign1.read_file(f'tests/testdata/{file}.root')
+campaign1.read_file(f'tests/testdata/spectra/{file}.root')
 
 #Add metainformation to the ROOT data
 campaign1.attach_info(campaign1.measurements[file], info_dict = {'particle': 'proton', 'detector': 'silicon', 'num_channels': 1024})
@@ -33,7 +33,7 @@ Spectrum.logarithmic_binning(campaign1.measurements[file], 80)
 Spectrum.probability_function(campaign1.measurements[file], 'F')
 Spectrum.probability_density(campaign1.measurements[file])
 
-y_F = Output.get_mean_value(campaign1.measurements[file])
-Output.plot_single(campaign1.measurements[file], mean=y_F)
+y_F, y_D = Output.means_from_fy(campaign1.measurements[file])
+Output.plot_single(campaign1.measurements[file], y_F=y_F)
 
 #----------------------------------------------------

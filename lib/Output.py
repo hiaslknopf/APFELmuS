@@ -241,8 +241,8 @@ def plot_campaign(campaign, name:str=False, output_path:str=False, xlim:list=[1,
     for measurement in campaign.measurements.values():
         if measurement.x_axis != campaign.measurements[meas_names[0]].x_axis or measurement.y_axis != campaign.measurements[meas_names[0]].y_axis:
             raise ValueError(f'All measurements in a campaign have to have the same x and y axis. {measurement.name} does not match ({campaign.measurements[meas_names[0]].x_axis}({campaign.measurements[meas_names[0]].y_axis})))')
-        if measurement.num_channels != campaign.measurements[meas_names[0]].num_channels:
-            raise ValueError(f'All measurements in a campaign have to have the same number of channels. {measurement.name} does not match ({campaign.measurements[meas_names[0]].num_channels})')
+        #if measurement.num_channels != campaign.measurements[meas_names[0]].num_channels:
+        #    raise ValueError(f'All measurements in a campaign have to have the same number of channels. "{measurement.name}" does not match ({campaign.measurements[meas_names[0]].num_channels})')
 
     if not name:
         name = 'Campaign Testplot'

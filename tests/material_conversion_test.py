@@ -13,7 +13,7 @@ from lib import Output, Advanced, Calibrate
 #----------------------------------------------------
 
 campaign1 = MicroDosimetry()
-campaign1.read_file('tests/testdata/exp_carbon_data_1.MCA')
+campaign1.read_file('tests/testdata/spectra/exp_carbon_data_1.MCA')
 
 Calibrate.get_chord_length(campaign1.measurements['exp_carbon_data_1'], 'slab', 10)
 Calibrate.scale_energy_axis_with_factor(campaign1.measurements['exp_carbon_data_1'], 3.71)

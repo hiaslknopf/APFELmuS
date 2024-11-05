@@ -34,3 +34,8 @@ campaign1.read_file(f'tests/testdata/sandra_low.MCA')
 
 #----------------------------------------------------
 Output.plot_single(campaign1.measurements['sandra_low'])
+
+# Remove files from the testdata folder
+
+for file in files:
+    os.remove(f'tests/testdata/{file}.MCA')

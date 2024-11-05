@@ -22,8 +22,8 @@ Calibrate.get_stopping_power('None', 10, 'SRIM', 0.05, 'helium', 'sic', plot=Tru
 
 #Read in
 campaign1 = MicroDosimetry()
-campaign1.read_file(f'tests/testdata/{edge_file}.MCA')
-campaign1.read_file(f'tests/testdata/{example_file}.MCA')
+campaign1.read_file(f'tests/testdata/spectra/{edge_file}.MCA')
+campaign1.read_file(f'tests/testdata/spectra/{example_file}.MCA')
 
 #Calibrate
 Calibrate.get_chord_length(campaign1.measurements[edge_file], 'slab', 10)

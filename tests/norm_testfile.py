@@ -16,7 +16,7 @@ from lib import Calibrate, Spectrum, Output
 campaign1 = MicroDosimetry()
 
 #Read in a whole folder --> campaign dict
-campaign1.read_folder('tests/testdata')
+campaign1.read_folder('tests/testdata/spectra')
 
 exp_file = 'exp_carbon_data_2'
 cal_file = 'exp_carbon_edge'

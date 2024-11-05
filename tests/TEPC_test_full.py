@@ -18,10 +18,10 @@ plot = False
 campaign1 = MicroDosimetry()
 
 #Have a look at the stuff in the folder
-campaign1.get_files_with_format('tests/testdata')
+campaign1.get_files_with_format('tests/testdata/spectra')
 
 #Read in a whole folder --> campaign dict
-campaign1.read_folder('tests/testdata')
+campaign1.read_folder('tests/testdata/spectra')
 
 if plot:
     Output.plot_single(campaign1.measurements['sandra_low'], 'Raw MCA spectrum: Low gain')

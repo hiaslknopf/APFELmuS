@@ -8,7 +8,9 @@ if projekt_dir not in sys.path:
 from MicroDosimetry import MicroDosimetry
 from lib import Calibrate, Spectrum, Output, Advanced
 
-""" Test the LET analysis (after Kellerer) """
+""" Test the LET analysis (Kellerer 1972) 
+
+    Very experimental, doesnt really work yet. """
 
 plot = True
 file = 'exp_carbon_data_1'
@@ -17,7 +19,7 @@ file = 'exp_carbon_data_1'
 
 #Set up a new measurement campaign
 campaign1 = MicroDosimetry()
-campaign1.read_folder('tests/testdata')
+campaign1.read_folder('tests/testdata/spectra')
 
 if plot:
     Output.plot_single(campaign1.measurements[file], 'MCA')

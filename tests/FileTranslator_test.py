@@ -27,7 +27,13 @@ FileTranslator.translate_MAESTRO_file(input_MAESTRO, input_linearization, output
 
 #Set up a new measurement campaign
 campaign1 = MicroDosimetry()
-campaign1.read_file(f'tests/testdata/{file}.MCA')
+campaign1.read_file(f'tests/testdata/spectra/{file}.MCA')
 
 #----------------------------------------------------
 Output.plot_single(campaign1.measurements[file], file, output_path)
+
+# Delete the .MCA file
+os.remove(f'tests/testdata/{file}.MCA')
+
+# Delete the plot
+os.remove(f'tests/testdata/{file}.png')

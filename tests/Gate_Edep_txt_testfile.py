@@ -16,7 +16,7 @@ file = 'GATE_Edep_sim'
 
 #Set up a new measurement campaign
 campaign1 = MicroDosimetry()
-campaign1.read_file(f'tests/testdata/{file}.txt')
+campaign1.read_file(f'tests/testdata/spectra/{file}.txt')
 
 #Add metainformation to the ROOT data
 campaign1.attach_info(campaign1.measurements[file], info_dict = {'particle': 'proton', 'detector': 'silicon'})
@@ -24,7 +24,7 @@ Calibrate.get_chord_length(campaign1.measurements[file], 'slab', 10, plot=False)
 
 print(campaign1.measurements[file].data)
 Output.plot_single(campaign1.measurements[file], name='test')
-Output.csv_output(campaign1.measurements[file], output_path='tests/testdata', name=file)
+#Output.csv_output(campaign1.measurements[file], output_path='tests/testdata', name=file)
 
 #----------------------------------------------------
 Calibrate.lineal_energy_axis(campaign1.measurements[file])

@@ -15,7 +15,7 @@ plot = True
 #----------------------------------------------------
 
 campaign1 = MicroDosimetry()
-campaign1.read_file('tests/testdata/exp_carbon_data_1.MCA')
+campaign1.read_file('tests/testdata/spectra/exp_carbon_data_1.MCA')
 
 if plot:
     Output.plot_single(campaign1.measurements['exp_carbon_data_1'], 'Raw Spectrum')

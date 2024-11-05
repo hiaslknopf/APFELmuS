@@ -28,4 +28,4 @@ output_file_path = 'tests/testdata'
 Linearization.get_linearization(output_file_name, output_file_path,
                                 pulse_mV_list, pulser_spectrum,
                                 pulser_calibration=pulser_calibration, method='interpol',
-                                testplot=True, cutoff=75)
+                                testplot=True, cutoff_front=75)

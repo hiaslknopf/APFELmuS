@@ -11,7 +11,7 @@ from MicroDosimetry import MicroDosimetry
 
 
 file = 'exp_148.2MeV_proton_si_10um'
-path = f'tests/testdata/{file}.csv'
+path = f'tests/testdata/spectra/{file}.csv'
 
 campaign1 = MicroDosimetry()
 campaign1.read_file(path)

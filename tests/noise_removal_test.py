@@ -10,13 +10,13 @@ from lib import Output, Advanced
 
 """ Remove noise from a measurement by subtracting a background measurement """
 
-#TODO: Better data, that actually fits together
+#TODO: Find some better data that actually fits together
 
 #----------------------------------------------------
 
 campaign1 = MicroDosimetry()
-campaign1.read_file('tests/testdata/exp_carbon_data_1.MCA')
-campaign1.read_file('tests/testdata/noise_background.MCA')
+campaign1.read_file('tests/testdata/spectra/exp_carbon_data_1.MCA')
+campaign1.read_file('tests/testdata/spectra/noise_background.MCA')
 
 Output.plot_campaign(campaign1, 'Raw Spectra')
 
