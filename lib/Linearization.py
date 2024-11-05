@@ -166,7 +166,14 @@ def _fit_peaks(spectrum, testplot=False, cutoff_front=False, cutoff_back=False):
 
     positions_gauss = []
     #It may be necessary to tune the prominence to find all peaks
-    positions, prop = find_peaks(spectrum['COUNTS'], height=50, prominence=120, distance=10) 
+    positions, prop = find_peaks(spectrum['COUNTS'], height=100, prominence=120, distance=10)
+
+    # Emergency plot
+    """ plt.step(spectrum.index, spectrum['COUNTS'], where='mid')
+    plt.fill_between(spectrum.index, spectrum['COUNTS'], 0, step='mid', color='cornflowerblue', alpha=0.5)
+    for pos in positions:
+        plt.axvline(x=spectrum.index[pos], color='r', linestyle='--', alpha=0.75)
+    plt.show() """
 
     # If peak found on the left edge, remove it (noise artifact)
     if positions[0] == 0 or positions[0] == cutoff_front:
