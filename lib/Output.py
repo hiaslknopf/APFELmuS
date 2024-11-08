@@ -218,8 +218,10 @@ def plot_single(measurement, name:str=False, output_path:str=False,
             os.makedirs(output_path)
         fig.savefig(f"{output_path}/{name}.png", dpi=600, bbox_inches='tight', orientation='portrait')
         print(f'"{name}".png saved to "{output_path}"')
+    
+    plt.close(fig)
 
-def plot_campaign(campaign, name:str=False, output_path:str=False, xlim:list=[1, 1000],
+def plot_campaign(campaign, name:str=False, output_path:str=False, xlim:list=[1, 1000], ylim:list=None,
                   step:bool=False, scale:str='log', skip_noise:int = 50, show_plot:bool=True, interactive:bool=True):
     """ View and save multiple spectra in one plot
     
@@ -279,6 +281,8 @@ def plot_campaign(campaign, name:str=False, output_path:str=False, xlim:list=[1,
         
     if math.isnan(ymax) or math.isinf(ymax):
         pass
+    elif ylim is not None:
+        ax.set_ylim(ylim)
     else:
         ax.set_ylim(0.0,1.1*ymax)
 
