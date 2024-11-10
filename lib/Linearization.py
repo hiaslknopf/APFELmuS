@@ -42,6 +42,7 @@ def _plot_pulser_cal(pulser_df, label, ax):
     ax.set_ylabel('Measured [mV]')
     ax.grid(True)
     ax.legend()
+    ax.set_title('Pulser calibration')
     plt.show()
 
 def _plot_peaks(spectrum, positions, popt_list, ax=None):
@@ -69,6 +70,7 @@ def _plot_peaks(spectrum, positions, popt_list, ax=None):
     ax.set_ylabel('Counts')
     ax.set_xlim(0, max(positions)*1.1)
     ax.set_ylim(0, 1.1 * max(spectrum['COUNTS']))
+    ax.set_title('Peak fitting -> Channel values')
     ax.grid(True)
     ax.legend()
 
@@ -85,6 +87,7 @@ def _plot_linearization(channel, mV, lin_curve_channel, lin_curve_mV, method, nu
     ax.grid(which='both')
     ax.set_xlim(0, num_channels)
     ax.set_ylim(0, 1.1 * max(mV))
+    ax.set_title('Linearization curve Ch -> mV')
     ax.legend()
 
     plt.show()
