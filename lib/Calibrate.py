@@ -103,7 +103,6 @@ def _plot_edge_calibration(dict, ax=None):
     ax.set_xlim(min(h), max(h), auto=False)
     ax.set_ylim(0, max(weighted_pdf)*1.1)
 
-    plt.tight_layout()
     plt.show()
 
 def _plot_stopping_power(dict, ax=None):
