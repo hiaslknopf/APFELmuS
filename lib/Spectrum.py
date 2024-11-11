@@ -274,7 +274,7 @@ def probability_function(measurement, type_of_dist:str):
 
     if type_of_dist == 'F':
         for i in range(1,len(measurement.data)):
-            F_temp.append(np.sum(x_data[:i]))
+            F_temp.append(np.sum(y_data[:i]))
         F_norm = np.divide(F_temp, num_p_above_cutoff, out=np.zeros_like(F_temp), where=num_p_above_cutoff!=0)
  
         measurement.data.drop(columns=measurement.y_axis, inplace=True)
