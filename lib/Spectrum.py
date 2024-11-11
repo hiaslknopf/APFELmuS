@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+import time
+
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 
@@ -260,16 +262,19 @@ def probability_function(measurement, type_of_dist:str):
 
     if measurement.x_axis not in ['ENERGY', 'LINEAL ENERGY'] or measurement.y_axis != 'COUNTS':
         raise ValueError('This manipulation only works for energy calibrated MCA spectra [lineal energy, counts]')
+    
+    x_data = np.array(measurement.data[measurement.x_axis])
+    y_data = np.array(measurement.data[measurement.y_axis])
 
-    num_p_above_cutoff = int(np.sum(measurement.data[measurement.y_axis].tolist()))
-    weighted_num_p_above_cutoff = float(np.sum(np.multiply(measurement.data[measurement.x_axis].tolist(), measurement.data[measurement.y_axis].tolist())))
+    num_p_above_cutoff = int(np.sum(x_data))
+    weighted_num_p_above_cutoff = float(np.sum(np.multiply(x_data, y_data)))
 
     F_temp = [0.0]
     D_temp = [0.0]
 
     if type_of_dist == 'F':
         for i in range(1,len(measurement.data)):
-            F_temp.append(np.sum(measurement.data[measurement.y_axis].tolist()[:i]))
+            F_temp.append(np.sum(x_data[:i]))
         F_norm = np.divide(F_temp, num_p_above_cutoff, out=np.zeros_like(F_temp), where=num_p_above_cutoff!=0)
  
         measurement.data.drop(columns=measurement.y_axis, inplace=True)
@@ -284,12 +289,12 @@ def probability_function(measurement, type_of_dist:str):
 
         print(f'Probability function {type_of_dist}(y) calculated: {measurement.name}')
 
+
     elif type_of_dist == 'D':
         for i in range(1,len(measurement.data)):
-            mul = np.multiply(measurement.data[measurement.x_axis].tolist()[:i], measurement.data[measurement.y_axis].tolist()[:i])
+            mul = np.multiply(x_data[:i], y_data[:i])
             D_temp.append(np.sum(mul))
         D_norm = np.divide(D_temp, weighted_num_p_above_cutoff, out=np.zeros_like(D_temp), where=weighted_num_p_above_cutoff!=0)
-
         measurement.data.drop(columns=measurement.y_axis, inplace=True)
         measurement.data[measurement.y_axis] = D_norm
 
@@ -317,8 +322,8 @@ def probability_density(measurement):
     if measurement.x_axis not in ['ENERGY', 'LINEAL ENERGY'] or measurement.y_axis not in ['F(y)', 'D(y)', 'F(E)', 'D(E)']:
         raise ValueError('This manipulation only works for probability functions [y, F(y)] or [y, D(y)]')
 
-    y = measurement.data[measurement.x_axis].to_numpy()
-    F = measurement.data[measurement.y_axis].to_numpy()
+    y = np.array(measurement.data[measurement.x_axis])
+    F = np.array(measurement.data[measurement.y_axis])
 
     pdf = [0.0]
 
