@@ -10,6 +10,8 @@ import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+# TODO: Something doesnt work when calculating ymax for the ICRU Helium data (Calculation, the stopping power table is fine)
+
 """ Collection of functions concerning the calibration, geometry and the energy axis of spectra """
 
 def _fermi_func(h, A, B, C):
@@ -191,7 +193,9 @@ def get_chord_length(measurement, shape:str, dimension:float, plot:bool=False):
         chord_length_dist['chord_len'] = np.arange(0, dimension, dimension/measurement.num_channels)
 
     if shape == 'slab':
-        chord_length_dist['pdf'] = np.array([dimension] * measurement.num_channels)
+        if not measurement == 'None':
+            chord_length_dist['pdf'] = np.array([dimension] * measurement.num_channels)
+        chord_length_dist['pdf'] = np.linspace(0, dimension, SAMPLING)
         mean = dimension
         max = dimension
     elif shape == 'sphere':

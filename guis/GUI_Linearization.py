@@ -425,13 +425,15 @@ class GUI_Linearization:
 
         # Remove the brackets and the newline character
         voltage_line = voltage_line.replace('[', '').replace(']', '').replace('\n', '')
-        print(voltage_line)
         
-        # Write the voltages into the entry field
+        # Write the voltages into the entry field - with comma separation
         if self.entry_mV_list.get("1.0", tk.END) != '':
             self.entry_mV_list.delete("1.0", tk.END)
         
-        self.entry_mV_list.insert("1.0", voltage_line)
+        values = voltage_line.strip("[]").split()
+        voltage_string_commasep = ', '.join(values)
+        
+        self.entry_mV_list.insert("1.0", voltage_string_commasep)
 
 root = tk.Tk()
 app = GUI_Linearization(root)
