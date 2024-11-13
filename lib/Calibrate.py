@@ -195,7 +195,7 @@ def get_chord_length(measurement, shape:str, dimension:float, plot:bool=False):
     if shape == 'slab':
         if not measurement == 'None':
             chord_length_dist['pdf'] = np.array([dimension] * measurement.num_channels)
-        chord_length_dist['pdf'] = np.linspace(0, dimension, SAMPLING)
+        chord_length_dist['pdf'] = ([dimension] * SAMPLING)
         mean = dimension
         max = dimension
     elif shape == 'sphere':
