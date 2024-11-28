@@ -95,6 +95,8 @@ def means_from_fy(measurement):
         raise ValueError('This function can only act on f(y) distributions')
 
 
+    measurement.data[measurement.y_axis] = measurement.data[measurement.y_axis].apply(lambda v: float(v) if isinstance(v, (float, int)) else v.item())
+
     x = measurement.data[measurement.x_axis].to_numpy()
     y = measurement.data[measurement.y_axis].to_numpy()
 
@@ -189,7 +191,7 @@ def plot_single(measurement, name:str=False, output_path:str=False,
         y_F_plot = ax.axvline(y_F, color='blue', linestyle='--', label=r'$y_F=$'+f'{y_F:.2f}'+' keV/µm', alpha=0.75)
         lines.append(y_F_plot)
     if y_D:
-        y_D_plot = ax.axvline(y_D, color='forestgreen', linestyle='--', label=r'$y_D=$'+f'{y_F:.2f}'+' keV/µm', alpha=0.75)
+        y_D_plot = ax.axvline(y_D, color='forestgreen', linestyle='--', label=r'$y_D=$'+f'{y_D:.2f}'+' keV/µm', alpha=0.75)
         lines.append(y_D_plot)
 
     ax.set_xlabel(labels_dict['x_labels'][measurement._x_axis])

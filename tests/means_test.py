@@ -37,6 +37,7 @@ if plot:
 
 Spectrum.probability_function(campaign1.measurements['exp_carbon_data_1'], 'F') # F(y)
 Spectrum.probability_density(campaign1.measurements['exp_carbon_data_1']) # f(y)
+Spectrum.normalize_spectrum(campaign1.measurements['exp_carbon_data_1']) # f(y) normalized to area 1
 
 # Calculate means
 y_F, y_D = Output.means_from_fy(campaign1.measurements['exp_carbon_data_1'])

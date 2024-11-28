@@ -763,15 +763,18 @@ class GUI_Analysis:
     def calculate_means(self, campaign):
         """ Calculate the mean values for the selected representations """
 
+        # Spectra are allready calibrated at this point
         if self.plot_means_var.get():
             Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
             Spectrum.probability_density(campaign.measurements[self.meas_name])
+            Spectrum.normalize_spectrum(campaign.measurements[self.meas_name])
 
             self.y_F, self.y_D = Output.means_from_fy(campaign.measurements[self.meas_name])
 
             # Return the proper spectrum for further plotting
             Spectrum.retrieve_original_spectrum(campaign.measurements[self.meas_name])
 
+            # Shit solution but you need to cutoff and calibrate again to calculate future spectra
             if self.cutoff_var.get():
                     Spectrum.cutoff(campaign.measurements[self.meas_name], channels=int(self.entry_cutoff.get()))
   
