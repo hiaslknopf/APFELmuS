@@ -49,7 +49,7 @@ def _lin_2_log(measurement, n_bins_per_decade: int):
     if start == 0.0:
         start = 0.0001 #For some ROOT data
     if start == None:
-        start = 0.0001 #For extrapolated data
+        start = 0.0001 #For extrapolated data or errors
 
     num_decades = np.abs(np.log10(stop)-np.log10(start))
     
@@ -216,7 +216,8 @@ def cutoff(measurement, channels:int=None, energy:float=None, lineal_energy:floa
 
 def logarithmic_binning(measurement, n_bins_per_decade:int):
     """ Rescale measurement dataframe to a (semi)logarithmic x-axis
-    
+        This can only happen on the linearly binned f(y) data !!!
+
     Args:
         measurement: the spectrum to be analyzed
         n_bins_per_decade: Number of log bins per decade
@@ -225,10 +226,17 @@ def logarithmic_binning(measurement, n_bins_per_decade:int):
     if measurement.x_axis != 'LINEAL ENERGY':
         raise ValueError('This manipulation only works for a calibrated lineal energy axes')
 
+    #if measurement.y_axis not in ['F(y)', 'D(y)']:
+    #    raise ValueError('This manipulation only works for linear probability functions; Due to numerical differentiation this actually makes a difference') 
+
     x = measurement.data[measurement.x_axis].to_numpy()
     y = measurement.data[measurement.y_axis].to_numpy()
 
     lin_to_log_x = _lin_2_log(measurement, n_bins_per_decade)
+    ### Identical to Sandra's implementation up until here ###
+
+    #x_log_center = [10**((-n_bins_per_decade + c-0.5)/n_bins_per_decade) for c in range(1, measurement.num_channels+1)]
+    #x_log_steps = [10**((-n_bins_per_decade + c)/n_bins_per_decade)  for c in range(1, measurement.num_channels+1)]
     
     quasi_log_x = np.asarray([])
     quasi_log_y = np.asarray([])
@@ -249,6 +257,7 @@ def logarithmic_binning(measurement, n_bins_per_decade:int):
 
 def probability_function(measurement, type_of_dist:str):
     """ To get from MCA spectrum counts(channel) to F(y) or D(y)
+        Please only use this on linear data
     
     The value of the distribution function F(y) is the probability that the lineal energy is equal to or less than y
     The same goes for the dose distribution function D(y)
@@ -257,8 +266,6 @@ def probability_function(measurement, type_of_dist:str):
         measurement: Spectrum to be analyzed
         type_of_dist: 'F' for F(y), 'D' for D(y)
     """
-    
-    #TODO: Does this also work for logarithmically binned data?
 
     if measurement.x_axis not in ['ENERGY', 'LINEAL ENERGY'] or measurement.y_axis != 'COUNTS':
         raise ValueError('This manipulation only works for energy calibrated MCA spectra [lineal energy, counts]')
@@ -340,6 +347,9 @@ def probability_density(measurement):
     measurement.data.drop(columns=measurement.y_axis, inplace=True)
     measurement.data[measurement.y_axis] = pdf
 
+    #area_under_curve = np.trapz(measurement.data[measurement.y_axis], x=measurement.data[measurement.x_axis], dx=1.0)
+    #print('Area under curve:', area_under_curve)
+
     if measurement.x_axis == 'LINEAL ENERGY':
         #measurement.x_axis = 'LINEAL ENERGY'
         if measurement.y_axis == 'F(y)':
@@ -391,8 +401,6 @@ def weighted_probability_density(measurement):
     Args:
         measurement: Spectrum to be analyzed
     """
-
-    #TODO: Does this also work for logarithmically binned data?
     
     if measurement.x_axis not in ['ENERGY', 'LINEAL ENERGY'] or measurement.y_axis not in ['f(y)', 'd(y)', 'f(E)', 'd(E)']:
         raise ValueError('This manipulation only works for probability density functions [y, f(y)] or [y, d(y)]')
@@ -401,7 +409,6 @@ def weighted_probability_density(measurement):
     pdf = measurement.data[measurement.y_axis].to_numpy()
 
     weighted_pdf = [0.0]
-
     weighted_pdf = np.multiply(y, pdf)
         
     measurement.data.drop(columns=measurement.y_axis, inplace=True)
@@ -425,16 +432,39 @@ def weighted_probability_density(measurement):
 
     print(f'Weighted probability density function {measurement.y_axis} calculated: {measurement.name}')
 
-def normalize_spectrum(measurement):
-    """ Normalize a spectrum to A=1 --> Numerical integration of arbitrary binned data.
-    See ICRU report 36, annex B. Implemented for pdf/y spectra.
+def normalize_log_spectrum(measurement):
+    """ Normalize a logarithmically rebinned spectrum according to ICRU reports 36 and 98
+        ONLY USE THIS FOR DATA THAT HAS BEEN LOGARITHMICALLY REBINNED ALREADY
+        Rebinning should be done directly after the probability function F(y) or D(y) to avoid numerical errors
+
+    Args:
+        measurement: Spectrum to be analyzed
+    """
+
+    if measurement.x_axis != 'LINEAL ENERGY' or measurement.y_axis not in ['yf(y)', 'yd(y)']:
+        raise ValueError('This manipulation only works for weighted probability density functions [y, yf(y)] or [y, yd(y)]')
+    
+    x = measurement.data[measurement.x_axis].to_numpy()
+    w_pdf = measurement.data[measurement.y_axis].to_numpy()
+
+    area_under_curve = np.trapz(w_pdf, x=np.log(x), dx=0.1)
+    w_pdf_norm = np.divide(w_pdf, area_under_curve)
+
+    measurement.data.drop(columns=measurement.y_axis, inplace=True)
+    measurement.data[measurement.y_axis] = w_pdf_norm
+
+    # Sanity check
+    area = np.trapz(w_pdf_norm, x=np.log(x), dx=1)
+    print(f"{measurement.name} normalized to A={area: .3f}")
+
+def normalize_linear_spectrum(measurement):
+    """ Normalize a linearly binned spectrum
     
     Args:
         measurement: Spectrum to be analyzed
     """
-    #TODO: Something about this does not quite work yet --> A!=1 for some spectra
     
-    if measurement.x_axis not in ['ENERGY', 'LINEAL ENERGY'] or measurement.y_axis not in ['f(y)', 'd(y)', 'yf(y)', 'yd(y)', 'f(E)', 'd(E)', 'Ef(E)', 'Ed(E)']:
+    if measurement.x_axis not in ['ENERGY', 'LINEAL ENERGY'] or measurement.y_axis not in ['f(y)', 'd(y)', 'f(E)', 'd(E)', 'Ef(E)', 'Ed(E)']:
         raise ValueError('Normalization is only implemented for lineal energy pdfs: f(y), d(y), yf(y), yd(y)')
 
     x = measurement.data[measurement.x_axis].tolist()
@@ -448,41 +478,15 @@ def normalize_spectrum(measurement):
         print('Negative values on your pdf axis have been removed!')
         #raise ValueError('There are negative values on your pdf axis!')
 
-    x.insert(0,0.0)
-    x.insert(-1,0.0)
+    # New naive version
+    area_under_curve = np.trapz(pdf, x=x, dx=1.0)
+    normalization_factor = area_under_curve
 
-    geometrical_mean_p = [] 
-    geometrical_mean_m = [] 
-
-    for i in range(1,len(x)-1):
-        geometrical_mean_p.append(np.sqrt(x[i]*x[i+1])) #y_{i+1/2}
-    for i in range(1,len(x)-1):
-        geometrical_mean_m.append(np.sqrt(x[i]*x[i-1])) #y_{i-1/2}
-
-    x = x[1:len(x)-2]
-    pdf = pdf[:len(pdf)-1] 
-
-    sum_for_norm = []
-
-    for i in range(len(pdf)):
-        if pdf[i] < 0.0:
-            pdf[i] = 0.0
-            pdf[i] = 0.0
-        sum_for_norm.append(pdf[i]*(geometrical_mean_p[i]-geometrical_mean_m[i]))
-
-    norm_factor = np.sum(sum_for_norm)
-    pdf_norm = np.divide(pdf, norm_factor)
-    
-    #TODO: Why does Sandra do this? Shouldn't every Spectrum be normalized to A=1
-    #if measurement.y_axis in ['yf(y)', 'yd(y)']:
-    #    pdf_norm = np.multiply(pdf_norm, x)
-    
-    pdf_norm = np.append(pdf_norm, 0.0)
+    pdf_norm = np.divide(pdf, normalization_factor)
 
     measurement.data.drop(columns=measurement.y_axis, inplace=True)
     measurement.data[measurement.y_axis] = np.abs(pdf_norm)
-    #measurement.data = measurement.data
-
+  
     #Sanity check
     area = np.trapz(measurement.data[measurement.y_axis], x=measurement.data[measurement.x_axis], dx=1.0)
     print(f"{measurement.name} normalized to A={area: .3f}")
