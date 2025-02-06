@@ -58,12 +58,19 @@ if plot:
 
 # The highest gain may be extrapolated towards zero (only possible for f(y))
 Spectrum.probability_function(campaign1.measurements['sandra_high'], 'F')
+Spectrum.logarithmic_binning(campaign1.measurements['sandra_high'], 60)
+
 Spectrum.probability_density(campaign1.measurements['sandra_high'])
-Spectrum.extrapolate(campaign1.measurements['sandra_high'], 'linear')
+#Spectrum.extrapolate(campaign1.measurements['sandra_high'], 'linear') # TODO: Extrapolation has to be fixed; Doesnt really work for log binned data
 Spectrum.dose_density(campaign1.measurements['sandra_high']) #d(y) calculated after extrapolation
 
 Spectrum.probability_function(campaign1.measurements['sandra_low'], 'D')
 Spectrum.probability_function(campaign1.measurements['sandra_mid'], 'D')
+
+
+Spectrum.logarithmic_binning(campaign1.measurements['sandra_low'], 60)
+Spectrum.logarithmic_binning(campaign1.measurements['sandra_mid'], 60)
+
 Spectrum.probability_density(campaign1.measurements['sandra_low'])
 Spectrum.probability_density(campaign1.measurements['sandra_mid'])
 
@@ -81,10 +88,6 @@ if plot:
     Output.plot_single(campaign1.measurements['sandra_low'], 'yd(y): Low gain')
     Output.plot_single(campaign1.measurements['sandra_mid'], 'yd(y): Mid gain')
     Output.plot_single(campaign1.measurements['sandra_high'], 'yd(y): High gain')
-
-Spectrum.logarithmic_binning(campaign1.measurements['sandra_low'], 60)
-Spectrum.logarithmic_binning(campaign1.measurements['sandra_mid'], 60)
-Spectrum.logarithmic_binning(campaign1.measurements['sandra_high'], 60)
 
 if plot:
     Output.plot_single(campaign1.measurements['sandra_low'], 'After logarithmic binning: Low gain')
@@ -117,7 +120,7 @@ Output.plot_single(campaign1.measurements['sandra_merged'], 'Merged Spectrum')
 #-------------------------------------------------
 
 #In the end you can calculate mean values
-Spectrum.normalize_spectrum(campaign1.measurements['sandra_merged'])
+Spectrum.normalize_log_spectrum(campaign1.measurements['sandra_merged'])
 
 #And plot the final data
 Output.plot_single(campaign1.measurements['sandra_merged'], output_path='plots/single.png')

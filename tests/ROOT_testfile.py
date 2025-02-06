@@ -29,11 +29,11 @@ Output.csv_output(campaign1.measurements[file], output_path='tests/testdata', na
 #----------------------------------------------------
 Calibrate.lineal_energy_axis(campaign1.measurements[file])
 Output.plot_single(campaign1.measurements[file], name='root')
-Spectrum.logarithmic_binning(campaign1.measurements[file], 80)
 Spectrum.probability_function(campaign1.measurements[file], 'F')
+Spectrum.logarithmic_binning(campaign1.measurements[file], 50)
 Spectrum.probability_density(campaign1.measurements[file])
+Spectrum.weighted_probability_density(campaign1.measurements[file])
 
-y_F, y_D = Output.means_from_fy(campaign1.measurements[file])
-Output.plot_single(campaign1.measurements[file], y_F=y_F)
+Output.plot_single(campaign1.measurements[file])
 
 #----------------------------------------------------
