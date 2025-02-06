@@ -81,7 +81,9 @@ def __on_pick(event, graphs, fig):
 
 def means_from_fy(measurement):
     """ Calculate y_F mean and y_D mean from an f(y) distribution
-        This is normalized by default to area=1 (even with cutoffs applied)
+        This is normalized by default to area=1 (even with cutoffs)
+
+        WARNING: PLEASE ONLY USE THIS ON LINEARLY BINNED DATA
 
     Args:
         measurement: The spectrum to be analyzed
