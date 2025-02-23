@@ -89,7 +89,7 @@ class MicroDosimetry():
         for file in accepted_files:
             self.read_file(file)
 
-    def read_file(self, file):
+    def read_file(self, file, num_root_bins=4096):
         """ Read in a measurement file with a read function from the Measurement class.
         Currently this is implemented for my version of MCA files (header + 3 columns).
         If another format is to be read: Set up a new read function and enable some kind of selection.
@@ -108,7 +108,7 @@ class MicroDosimetry():
         if extension == '.MCA':
             measurement.read_MCA_file(file)
         elif extension == '.root':
-            measurement.read_ROOT_file(file)
+            measurement.read_ROOT_file(file, num_root_bins)
         elif extension == '.csv':
 
             #Check if it is a uDos file
@@ -475,15 +475,15 @@ class Measurement():
         self._x_axis = 'CHANNEL'
         self._y_axis = 'COUNTS'
 
-    def read_ROOT_file(self, file, NUM_ROOT_CHANNELS=4096):
+    def read_ROOT_file(self, file, num_root_bins):
         """ Read in information from a given ROOT file (GATE, Geant4 Energy deposition simulation). """
 
         #TODO: Include reading and attaching Track length information
 
-        if math.log2(NUM_ROOT_CHANNELS).is_integer() == True:
-            self._num_channels = NUM_ROOT_CHANNELS
+        if math.log2(num_root_bins).is_integer() == True:
+            self._num_channels = num_root_bins
         else:
-            raise NotImplementedError(f'In {file}: Number of channels {NUM_ROOT_CHANNELS} is not a power of two')
+            raise NotImplementedError(f'In {file}: Number of channels {num_root_bins} is not a power of two')
 
         self._date = datetime.fromtimestamp(os.path.getmtime(file)).strftime('%m/%d/%y %H:%M:%S')
         self._detector = 'None (Not yet attached)'
@@ -505,7 +505,7 @@ class Measurement():
             elif 'energy' in keys:
                 root_data = np.asarray(uproot.open(file)['Hits']['energy'])
 
-            hist_data, bins = np.histogram(root_data, bins=NUM_ROOT_CHANNELS, density=False)
+            hist_data, bins = np.histogram(root_data, bins=num_root_bins, density=False)
             bins = bins[:-1]
 
             #For some reason you need to create this twice so the df are not linked to each other

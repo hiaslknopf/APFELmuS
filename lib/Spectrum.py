@@ -7,8 +7,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-import time
-
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 
@@ -182,6 +180,20 @@ def _merge_plot_stitched(measurements, dict, ax=None, show=False):
 
     if show:
         plt.show()
+
+def ROOT_straight_to_ydy(measurement, num_log_bins:int=60, mean_chord_length:float=10.0):
+    """ Shortcut for the straight to yd(y) transformation """
+
+    measurement.mean_chord_length = mean_chord_length
+
+    # Scale x-axis
+    measurement.data[measurement.x_axis] = measurement.data[measurement.x_axis].divide(mean_chord_length)
+    measurement.x_axis = 'LINEAL ENERGY'
+    
+    probability_function(measurement, 'D')
+    logarithmic_binning(measurement, num_log_bins)
+    probability_density(measurement)
+    weighted_probability_density(measurement)
 
 def cutoff(measurement, channels:int=None, energy:float=None, lineal_energy:float=None):
     """ Low energy cutoff for noisy channels
