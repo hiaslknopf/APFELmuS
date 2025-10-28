@@ -36,16 +36,16 @@ if os.name == 'nt':
     root.iconbitmap("ressources/logo.ico")
 
 # Buttons to launch the different GUIs
-button_gui1 = tk.Button(root, text="Analyze Spectra\n(From Pulse Height -> uDos Spectrum)", command=lambda: launch_gui('guis/GUI_Analysis.py'), **button_style)
+button_gui1 = tk.Button(root, text="Analyze Spectra\n(PHA Measurement -> uDos Spectrum)", command=lambda: launch_gui('guis/GUI_Analysis.py'), **button_style)
 button_gui1.pack(pady=5)
 
-button_gui2 = tk.Button(root, text="Edge Calibration\n(Get scaling factor or Edge position)", command=lambda: launch_gui('guis/GUI_Calibration.py'), **button_style)
+button_gui2 = tk.Button(root, text="Edge Calibration\n(Get scaling or Edge position + ymax)", command=lambda: launch_gui('guis/GUI_Calibration.py'), **button_style)
 button_gui2.pack(pady=5)
 
 button_gui3 = tk.Button(root, text="Create Linearization File\n(From a pulser Spectrum)", command=lambda: launch_gui('guis/GUI_Linearization.py'), **button_style)
 button_gui3.pack(pady=5)
 
-button_gui4 = tk.Button(root, text="Attach Linearization\n(To a MAESTRO .Spe file)", command=lambda: launch_gui('guis/GUI_FileTranslator.py'), **button_style)
+button_gui4 = tk.Button(root, text="Attach Linearization\n(MAESTRO .Spe -> .MCA file)", command=lambda: launch_gui('guis/GUI_FileTranslator.py'), **button_style)
 button_gui4.pack(pady=5)
 
 button_gui5 = tk.Button(root, text="Help", command=help_me, **button_style)

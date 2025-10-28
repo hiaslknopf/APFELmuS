@@ -770,7 +770,7 @@ class GUI_Analysis:
         if self.plot_means_var.get():
             Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
             Spectrum.probability_density(campaign.measurements[self.meas_name])
-            Spectrum.normalize_spectrum(campaign.measurements[self.meas_name])
+            Spectrum.normalize_linear_spectrum(campaign.measurements[self.meas_name])
 
             self.y_F, self.y_D = Output.means_from_fy(campaign.measurements[self.meas_name])
 
@@ -842,23 +842,7 @@ class GUI_Analysis:
                         self.calculate_means(campaign)
 
                     # Calculate selected representations
-                    if index == 1: #f(y)
-                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
-                        Spectrum.probability_density(campaign.measurements[self.meas_name])
-                    if index == 2: #F(y)
-                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
-                    if index == 3: #d(y)
-                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
-                        Spectrum.probability_density(campaign.measurements[self.meas_name])
-                    if index == 4: #yf(y) 
-                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
-                        Spectrum.probability_density(campaign.measurements[self.meas_name])
-                        Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
-                    if index == 5: #yd(y)
-                        Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
-                        Spectrum.probability_density(campaign.measurements[self.meas_name])
-                        Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
-                    
+                    #                     
                     # Logarithmic binning (if selected)
                     if self.log_binning_var.get() and index != 0:
                         if self.entry_num_bins.get() == self.num_bins_placeholder: # Default number of bins=50
@@ -866,11 +850,55 @@ class GUI_Analysis:
                             num_bins = 50
                         else:
                             num_bins = int(self.entry_num_bins.get())
-                        Spectrum.logarithmic_binning(campaign.measurements[self.meas_name], num_bins)
+                        
+                        if index == 1: #f(y)
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+                            Spectrum.logarithmic_binning(campaign.measurements[self.meas_name], num_bins)
+                            Spectrum.probability_density(campaign.measurements[self.meas_name])
+                        if index == 2: #F(y)
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+                            Spectrum.logarithmic_binning(campaign.measurements[self.meas_name], num_bins)
+                        if index == 3: #d(y)
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
+                            Spectrum.logarithmic_binning(campaign.measurements[self.meas_name], num_bins)
+                            Spectrum.probability_density(campaign.measurements[self.meas_name])
+                        if index == 4: #yf(y) 
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+                            Spectrum.logarithmic_binning(campaign.measurements[self.meas_name], num_bins)
+                            Spectrum.probability_density(campaign.measurements[self.meas_name])
+                            Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
+                        if index == 5: #yd(y)
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
+                            Spectrum.logarithmic_binning(campaign.measurements[self.meas_name], num_bins)
+                            Spectrum.probability_density(campaign.measurements[self.meas_name])
+                            Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
                     
-                    # Normalize spectra to area=1 (except for the original and the F(y) spectrum)
-                    if not index in [0,2]:
-                        Spectrum.normalize_spectrum(campaign.measurements[self.meas_name])
+                        # Normalize spectra to area=1 (except for the original and the F(y) spectrum)
+                        if not index in [0,2]:
+                            Spectrum.normalize_log_spectrum(campaign.measurements[self.meas_name])
+                    
+                    else:
+
+                        if index == 1: #f(y)
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+                            Spectrum.probability_density(campaign.measurements[self.meas_name])
+                        if index == 2: #F(y)
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+                        if index == 3: #d(y)
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
+                            Spectrum.probability_density(campaign.measurements[self.meas_name])
+                        if index == 4: #yf(y) 
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'F')
+                            Spectrum.probability_density(campaign.measurements[self.meas_name])
+                            Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
+                        if index == 5: #yd(y)
+                            Spectrum.probability_function(campaign.measurements[self.meas_name], 'D')
+                            Spectrum.probability_density(campaign.measurements[self.meas_name])
+                            Spectrum.weighted_probability_density(campaign.measurements[self.meas_name])
+                    
+                        # Normalize spectra to area=1 (except for the original and the F(y) spectrum)
+                        if not index in [0,2]:
+                            Spectrum.normalize_linear_spectrum(campaign.measurements[self.meas_name])
                     
                     # Setup plot canvas
                     fig, ax, canvas = self.setup_plot(tab_name, tab_text)

@@ -22,16 +22,20 @@ from lib import Spectrum, Output
 from guis.welcome_message import welcome_message
 
 """ A simple GUI to merge 2 or 3 spectra of different gains.
-    The input data is already analyzed .csv files. Its too complicated to include the whole analysis in this little GUI.
 
-    The merged spectrum can also be saved as an analyzed .csv file.
+    --- WARNING: THIS IS A WORK IN PROGRESS ---
+
+    The input data are already analyzed .csv files (calibrated, proper representation).
+    The merged spectrum can be saved again as an analyzed .csv file.
  """
+
 ### Im großen und ganzen funktionierts, muss aber noch bissl poliert werden
+# Du solltest die linearen Spektren mergen und dann alles gemeinsam log-binnen
 # Deppensicher machen: Ausnahmen etc
-# Gscheide guesses for initial Parameter
+# Automatische guesses für initial Parameters
 # Plots schauen Kacke aus
 # Iwie control panel für binning und normalization
-# Gscheider Text output während rechnen und nachher usw
+# Gscheider Text output während rechnen und nachher
 
 class GUI_Merge:
 
@@ -88,7 +92,7 @@ class GUI_Merge:
 
         self.text_input_info = tk.Text(self.frame_textbox, width=60, height=10, wrap=tk.WORD, bg="white", state=tk.NORMAL)
         self.text_input_info.grid(row=0, column=0, padx=10, pady=10, sticky='w')
-        self.initial_text = "Load input files to merge spectra."
+        self.initial_text = "Load input files to merge spectra.\n\n --- WARNING: THIS IS A WORK IN PROGRESS ---\nAt the moment you can only load already analyzed .csv files (calibrated, log-binned, proper representation)"
         self.text_input_info.insert(tk.END, self.initial_text)
 
     def create_set_parameters_widgets(self):
@@ -346,7 +350,7 @@ class GUI_Merge:
         # Add the new spectrum to the campaign
         self.campaign.add_measurement('merged', merged_spec)
         Spectrum.logarithmic_binning(self.campaign.measurements['merged'], 60) #TODO: Add these as options somewhere
-        Spectrum.normalize_spectrum(self.campaign.measurements['merged'])
+        Spectrum.normalize_log_spectrum(self.campaign.measurements['merged'])
 
         self.add_plot_tab(None, info_dict=info_dict,
                           tab_name="merged", tab_text='Merged',

@@ -99,7 +99,7 @@ def _plot_edge_calibration(dict, ax=None):
     ax.axhline(0, color='black', linestyle='--')
 
     #ax.set_xscale('log')
-    ax.set_title('Edge Calibration')
+    #ax.set_title('Edge Calibration')
     ax.legend(framealpha=1)
 
     ax.set_xlim(min(h), max(h), auto=False)

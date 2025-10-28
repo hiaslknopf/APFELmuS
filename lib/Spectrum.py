@@ -464,7 +464,7 @@ def normalize_linear_spectrum(measurement):
         measurement: Spectrum to be analyzed
     """
     
-    if measurement.x_axis not in ['ENERGY', 'LINEAL ENERGY'] or measurement.y_axis not in ['f(y)', 'd(y)', 'f(E)', 'd(E)', 'Ef(E)', 'Ed(E)']:
+    if measurement.x_axis not in ['ENERGY', 'LINEAL ENERGY'] or measurement.y_axis not in ['f(y)', 'd(y)', 'yf(y)', 'yd(y)', 'f(E)', 'd(E)', 'Ef(E)', 'Ed(E)']:
         raise ValueError('Normalization is only implemented for lineal energy pdfs: f(y), d(y), yf(y), yd(y)')
 
     x = measurement.data[measurement.x_axis].tolist()
