@@ -20,9 +20,6 @@ plots/*.pdf
 # The temp folder created by the GUI
 temp
 
-# Forgotten text files
-*.txt
-
 # Drawio stuff
 docs/.$*
 ressources/.$*
@@ -33,4 +30,5 @@ fix_lin.py
 lin
 
 # Python env
-udos_env/
+udos_env
+venv

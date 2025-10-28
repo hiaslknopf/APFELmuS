@@ -34,6 +34,12 @@ Currently, only ORTEC MAESTRO .Spe files and ROOT files from Monte Carlo simulat
 The package is designed to be used in your own python environment. The user can either use the provided GUIs or import the functions into their own code similar to using python packages. The GUIs are a practical way to quickly inspect data, but the real power lies in using the functions in your own code. Theres no magic happening, its very basic operations on pandas dataframes. The idea is to provide a structured way to do this and save time by not writing the same code over and over.<br>
 
 ## Requirements
+
+Quick start:
+`python -m venv my_env`<br>
+`source my_env/bin/activate` (Linux/Mac) or `my_env\Scripts\activate` (Windows)<br>
+`pip install -r requirements.txt`<br>
+
 - Python 3.6 or higher
 - Standard library packages: numpy, math, pandas, scipy, matplotlib, ctypes, os, sys
 - tkinter (for the GUIs)
