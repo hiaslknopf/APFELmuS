@@ -2,6 +2,10 @@ import sys
 
 # Whereever you stored the repository project folder
 projekt_dir = 'C:/Users/knopf/Desktop/APFELmuS'
+
+# Linux version
+# projekt_dir = '/home/knopf/Desktop/APFELmuS'
+
 if projekt_dir not in sys.path:
     sys.path.append(projekt_dir)
 

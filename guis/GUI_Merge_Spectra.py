@@ -36,7 +36,9 @@ from guis.welcome_message import welcome_message
 class GUI_Merge:
 
     myappid = 'APFELmuS_Merge' # arbitrary string
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+    if os.name == 'nt':
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     def __init__(self, root):
         # Main window setup
@@ -44,7 +46,8 @@ class GUI_Merge:
         self.root.title("APFELmuS - Merge Spectra")
 
         # Load the APFELmuS logo
-        root.iconbitmap("ressources/logo.ico")
+        if os.name == 'nt':
+            root.iconbitmap("ressources/logo.ico")
 
         # Create the widgets
         self.create_load_data_widgets()

@@ -10,7 +10,7 @@ from lib import Calibrate, Spectrum, Output
 
 """ Evaluate GATE Energy Actor simulation data (txt format) """
 
-file = 'GATE_Edep_sim'
+file = 'GATE_Edep'
 
 #----------------------------------------------------
 
@@ -28,7 +28,6 @@ Output.plot_single(campaign1.measurements[file], name='test')
 
 #----------------------------------------------------
 Calibrate.lineal_energy_axis(campaign1.measurements[file])
-Output.plot_single(campaign1.measurements[file], name='root')
 Spectrum.logarithmic_binning(campaign1.measurements[file], 80)
 Spectrum.probability_function(campaign1.measurements[file], 'F')
 Spectrum.probability_density(campaign1.measurements[file])

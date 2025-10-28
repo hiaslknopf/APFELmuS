@@ -343,12 +343,12 @@ def probability_density(measurement):
         else:
             delta_F = F[i] - F[i-1]
             pdf.append(np.divide(delta_F,delta_y, out=np.zeros_like(delta_F), where=delta_y!=0))
-        
+            
     measurement.data.drop(columns=measurement.y_axis, inplace=True)
     measurement.data[measurement.y_axis] = pdf
-
-    #area_under_curve = np.trapz(measurement.data[measurement.y_axis], x=measurement.data[measurement.x_axis], dx=1.0)
-    #print('Area under curve:', area_under_curve)
+    
+    area_under_curve = np.trapz(measurement.data[measurement.y_axis], x=measurement.data[measurement.x_axis], dx=1.0)
+    print('Area under curve:', area_under_curve)
 
     if measurement.x_axis == 'LINEAL ENERGY':
         #measurement.x_axis = 'LINEAL ENERGY'

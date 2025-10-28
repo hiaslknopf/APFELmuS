@@ -27,7 +27,9 @@ from guis.welcome_message import welcome_message
 class GUI_Linearization:
 
     myappid = 'APFELMUS_Linearization' # arbitrary string
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+    if os.name == 'nt':
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     def __init__(self, root):
         self.root = root
@@ -35,7 +37,8 @@ class GUI_Linearization:
         self.create_widgets()
 
         # Load the APFELmuS logo
-        root.iconbitmap("ressources/logo.ico")
+        if os.name == 'nt':
+            root.iconbitmap("ressources/logo.ico")
 
         self.last_browsed_path = os.path.dirname(os.path.abspath(__file__))
 

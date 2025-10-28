@@ -34,17 +34,17 @@ Calibrate.scale_energy_axis(campaign1.measurements[exp_file], edge_pos_mV, ymax,
 
 # Calculate uDos representation
 Spectrum.cutoff(campaign1.measurements[exp_file], channels=14)
+Spectrum.logarithmic_binning(campaign1.measurements[exp_file], 60)
 
 Spectrum.probability_function(campaign1.measurements[exp_file], 'F')
 Spectrum.probability_density(campaign1.measurements[exp_file])
-Spectrum.extrapolate(campaign1.measurements[exp_file], 'linear')
 Spectrum.dose_density(campaign1.measurements[exp_file])
 Spectrum.weighted_probability_density(campaign1.measurements[exp_file])
-Spectrum.logarithmic_binning(campaign1.measurements[exp_file], 60)
+
 
 # Plotting
 Output.plot_single(campaign1.measurements[exp_file], 'Binned')
 
 # Normalization
-Spectrum.normalize_spectrum(campaign1.measurements[exp_file])
+Spectrum.normalize_log_spectrum(campaign1.measurements[exp_file])
 Output.plot_single(campaign1.measurements[exp_file], 'Normalized')

@@ -21,6 +21,7 @@ campaign1.read_file('tests/testdata/spectra/exp_carbon_data_2.MCA')
 for file in campaign1.measurements:
     Calibrate.scale_energy_axis_with_factor(campaign1.measurements[file], 0.8)
     Spectrum.probability_function(campaign1.measurements[file], 'D')
+    Spectrum.logarithmic_binning(campaign1.measurements[file], 60)
     Spectrum.probability_density(campaign1.measurements[file])
     Spectrum.weighted_probability_density(campaign1.measurements[file])
 

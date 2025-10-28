@@ -1,6 +1,8 @@
 import tkinter as tk
 import subprocess
 
+import os
+
 import ctypes
 
 def launch_gui(script):
@@ -21,14 +23,17 @@ def help_me():
     print("Help yourself!")
 
 myappid = 'APFELMUS_Launcher' # arbitrary string
-ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+if os.name == 'nt':
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 root = tk.Tk()
 root.title("APFELmuS Launcher")
 root.geometry("300x300")
 
 # Load the APFELmuS logo
-root.iconbitmap("ressources/logo.ico")
+if os.name == 'nt':
+    root.iconbitmap("ressources/logo.ico")
 
 # Buttons to launch the different GUIs
 button_gui1 = tk.Button(root, text="Analyze Spectra\n(From Pulse Height -> uDos Spectrum)", command=lambda: launch_gui('guis/GUI_Analysis.py'), **button_style)

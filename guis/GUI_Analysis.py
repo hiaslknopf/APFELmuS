@@ -26,7 +26,9 @@ from guis.welcome_message import welcome_message
 class GUI_Analysis:
 
     myappid = 'APFELMUS_Analysis' # Some arbitrary string
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+    if os.name == 'nt':
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     def __init__(self, root):
         # Main window setup
@@ -34,7 +36,8 @@ class GUI_Analysis:
         self.root.title("APFELmuS - Spectrum Viewer")
 
         # Load the APFELmuS logo
-        root.iconbitmap("ressources/logo.ico")
+        if os.name == 'nt':
+            root.iconbitmap("ressources/logo.ico")
 
         # Create the widgets
         self.create_cal_widgets()

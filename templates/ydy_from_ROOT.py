@@ -2,11 +2,15 @@ import sys
 
 # Whereever you stored the repository project folder
 projekt_dir = 'C:/Users/knopf/Desktop/APFELmuS'
+
+# Linux version
+# projekt_dir = '/home/hiasl/Desktop/APFELmuS'
+
 if projekt_dir not in sys.path:
     sys.path.append(projekt_dir)
 
 from MicroDosimetry import MicroDosimetry
-from lib import Calibrate, Spectrum, Output
+from lib import Calibrate, Spectrum
 
 """ calculate ydy spectra from the ROOT files """
 
@@ -24,7 +28,7 @@ for file in campaign1.measurements:
 
     Calibrate.lineal_energy_axis(campaign1.measurements[file])
     Spectrum.probability_function(campaign1.measurements[file], 'D')
+    Spectrum.logarithmic_binning(campaign1.measurements[file], 60)	
     Spectrum.probability_density(campaign1.measurements[file])
     Spectrum.weighted_probability_density(campaign1.measurements[file])
-    Spectrum.logarithmic_binning(campaign1.measurements[file], 60)	
-    Spectrum.normalize_spectrum(campaign1.measurements[file])
+    Spectrum.normalize_log_spectrum(campaign1.measurements[file])

@@ -19,7 +19,9 @@ from lib import FileTranslator
 class GUI_FileTranslator:
 
     myappid = 'APFELMUS_FileTranslator' # arbitrary string
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+    if os.name == 'nt':
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     def __init__(self, root):
         self.root = root
@@ -27,7 +29,8 @@ class GUI_FileTranslator:
         self.create_widgets()
 
         # Load the APFELmuS logo
-        root.iconbitmap("ressources/logo.ico")
+        if os.name == 'nt':
+            root.iconbitmap("ressources/logo.ico")
 
         self.last_browsed_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -77,7 +80,7 @@ class GUI_FileTranslator:
         self.button_frame.grid(row=1, column=0, columnspan=2, sticky=tk.W+tk.E)
 
         # Translate button
-        self.translate_button = ttk.Button(self.button_frame, text="Translate", command=self.translate_file)
+        self.translate_button = ttk.Button(self.button_frame, text="Save as .MCA file", command=self.translate_file)
         self.translate_button.grid(row=0, column=0, sticky=tk.W, ipadx=50, ipady=15)
 
         # Reset button
