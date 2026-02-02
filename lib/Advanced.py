@@ -10,12 +10,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from scipy.fft import rfft, rfftfreq, irfft
-from sklearn.preprocessing import normalize
 
 import os
 
 ressources_path = 'ressources/stopping_power_tables'
-
 
 """ Module for more experimental, advanced analysis ideas not part of the standard workflow.
     Take this with a grain of salt, there's some of half-baked stuff in here. """
@@ -35,7 +33,15 @@ def remove_noise(measurement, background_measurement):
 
     scaling_factor = measurement.real_time / background_measurement.real_time
 
-    measurement.data[measurement.y_axis] = measurement.data[measurement.y_axis] - scaling_factor * background_measurement.data[background_measurement.y_axis]
+    #measurement.data[measurement.y_axis] = measurement.data[measurement.y_axis] - scaling_factor * background_measurement.data[background_measurement.y_axis]
+    #measurement.data.loc[measurement.data[measurement.y_axis] < 0, measurement.y_axis] = 0
+
+    # Scale noise peak to the noise peak in the measurement
+    noise_peak_channel = np.argmax(background_measurement.data[background_measurement.y_axis])
+    measurement_peak_channel = np.argmax(measurement.data[measurement.y_axis])
+    peak_scaling_factor = measurement.data[measurement.y_axis][measurement_peak_channel] / background_measurement.data[background_measurement.y_axis][noise_peak_channel]
+
+    measurement.data[measurement.y_axis] = measurement.data[measurement.y_axis] - peak_scaling_factor * background_measurement.data[background_measurement.y_axis]
     measurement.data.loc[measurement.data[measurement.y_axis] < 0, measurement.y_axis] = 0
 
     print(f'Noise removed from spectrum: {measurement.name}')
@@ -184,8 +190,8 @@ def get_LET_distribution(measurement, chord_length_dist, LET_spec='pdf'):
 
     #Normalize distributions for Fourier Transform
     gamma = np.multiply(chord_length_dist['pdf'], chord_length_dist['chord_len'])
-    norm_gamma = normalize(gamma[:,np.newaxis], axis=0).ravel()
-    norm_phi = normalize(phi[:,np.newaxis], axis=0).ravel()
+    norm_gamma = gamma / np.sum(gamma)
+    norm_phi = phi / np.sum(phi)
 
     if testplot:
         fig, ax = plt.subplots()

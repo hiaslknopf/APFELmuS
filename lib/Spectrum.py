@@ -480,9 +480,7 @@ def normalize_linear_spectrum(measurement):
 
     # New naive version
     area_under_curve = np.trapz(pdf, x=x, dx=1.0)
-    normalization_factor = area_under_curve
-
-    pdf_norm = np.divide(pdf, normalization_factor)
+    pdf_norm = np.divide(pdf, area_under_curve)
 
     measurement.data.drop(columns=measurement.y_axis, inplace=True)
     measurement.data[measurement.y_axis] = np.abs(pdf_norm)

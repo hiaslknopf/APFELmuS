@@ -12,7 +12,7 @@ from lib import Calibrate
 #----------------------------------------------------
 
 #The calibration functions can be used without any measurement
-mean, max, _ =Calibrate.get_chord_length('None', 'sphere', 10, True)
+mean, max, _ =Calibrate.get_chord_length('None', 'slab', 10, False)
 print(f'mean chord length: {mean} um')
 print(f'max chord length: {max} um\n')
 
