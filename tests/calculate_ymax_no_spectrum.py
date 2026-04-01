@@ -16,7 +16,7 @@ mean, max, _ =Calibrate.get_chord_length('None', 'slab', 10, False)
 print(f'mean chord length: {mean} um')
 print(f'max chord length: {max} um\n')
 
-ymax, Lmax, _ = Calibrate.get_stopping_power('None', mean, 'ICRU', 0.01, 'proton', 'silicon', plot=True)
+ymax, Lmax, _ = Calibrate.get_stopping_power('None', mean, 'ICRU', 0.01, 'carbon', 'diamond', plot=True)
 
 print(f'ymax: {ymax} keV/um')
 #----------------------------------------------------

@@ -427,10 +427,20 @@ def get_edge_pos(measurement, marker_point:str, fit_bounds:list=None, check_plot
         print(f"Initial guesses: A={A_guess}, B={B_guess}, C={C_guess}")
 
         bounds = [[0.01, 0.01, -25], [10, 1000, 4096]] #A,B,C min ; A,B,C max
-        popt, pcov = curve_fit(_fermi_func, h_fit, weighted_pdf_fit,
-                               p0=[A_guess, B_guess, C_guess], bounds=(bounds[0], bounds[1]))
-        
-        print(f"Optimal parameters: A={popt[0]}, B={popt[1]}, C={popt[2]}")
+        try:
+            popt, pcov = curve_fit(_fermi_func, h_fit, weighted_pdf_fit,
+                                p0=[A_guess, B_guess, C_guess], bounds=(bounds[0], bounds[1]))
+            
+            print(f"Optimal parameters: A={popt[0]}, B={popt[1]}, C={popt[2]}")
+        except:
+            print("Fit did not converge")
+            
+            plt.plot(h_fit, weighted_pdf_fit, color='red', label='Spectrum')
+            plt.xlabel('mV')
+            plt.ylabel('hd(h)')
+            plt.title('Edge Calibration - Fit did not converge')
+            plt.legend()
+            plt.show()
 
         #calculate marker points
         hFlex = popt[2]

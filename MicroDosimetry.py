@@ -460,7 +460,7 @@ class Measurement():
         self._real_time = real_time
 
     def read_MCA_file(self, file):
-        """ Read in information from a given MCA file. """
+        """ Read in information from a given APFELmuS MCA file. """
 
         #Get header information and set it in measurement object
         file = os.path.normpath(file)
@@ -498,6 +498,8 @@ class Measurement():
             print(keys)
             raise IOError('ROOT file does not contain an energy deposition tree (Hits/edep)')
         else:
+            # GATE V9.3 output
+            # TODO: Update this for GATE10 Data
             if 'edep' in keys:
                 root_data = np.asarray(uproot.open(file)['Hits']['edep'])
             elif 'Edep' in keys:

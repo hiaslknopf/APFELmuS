@@ -8,6 +8,7 @@ from dateutil import parser
 from datetime import datetime
 
 import numpy as np
+import pickle
 
 """ This is a translator tool that converts spectrum files (currently only MAESTRO .Spe) and APFELmuS linearization files (.csv) into the current version of APFELmuS MCA files (.MCA) for analysis with APFELmuS. """
 
@@ -16,10 +17,11 @@ def _read_MAESTRO_file(filepath):
         One for the metadata and one for the spectrum data
 
     Args:
-        filepath
+        filepath: Path to the MAESTRO .Spt file
     Returns:
-        header_dict: Dict containing header information (metadata)
         data_df: Pandas dataframe containing spectrum information   
+        header_dict: Dict containing header information (metadata)
+        num_channels: Number of channels in the spectrum
     """
 
     #Strip info from MAESTRO file header
@@ -37,6 +39,36 @@ def _read_MAESTRO_file(filepath):
     data_df = pd.read_csv(filepath, header=None, skiprows=12, nrows = num_channels, names=['COUNTS'])
 
     return data_df, header_dict, num_channels
+
+def _read_pickled_spt_file(file, NUM_CHANNELS=16384):
+    """ Get pulse heights from SPT analysis (pickle file)
+    
+        Args:
+            file: Path to the pickled SPT data
+            NUM_CHANNELS: Number of channels to resample the SPT data to (default: 16384)
+            
+        Returns:
+            data_df: Pandas dataframe containing spectrum information
+            header_dict: Dict containing header information (metadata)
+    """
+
+    date = datetime.now()
+    num_channels = NUM_CHANNELS
+    live_time = 'None'
+    real_time = 'None'
+
+    header_dict = {'DATE': date, 'NUM_CHANNELS': num_channels,
+                    'LIVE_TIME': live_time, 'REAL_TIME': real_time}
+
+    _, pulse_heights = pickle.load(open(file, 'rb')).values()
+    print(f'Got pulse heights from {file} with {len(pulse_heights)} entries: {pulse_heights[:10]} ...')
+    x_axis = np.linspace(np.min(pulse_heights), np.max(pulse_heights), NUM_CHANNELS)
+    hist_data, bins = np.histogram(pulse_heights, bins=x_axis)
+    bins = bins[:-1]
+
+    data_df = pd.DataFrame({'COUNTS': hist_data})
+
+    return data_df, header_dict
 
 def _read_MAESTRO_rpt_file(filepath):
     """ Read MAESTRO .rpt report containing peak information
@@ -71,6 +103,13 @@ def __read_Linearization_file(filepath, num_channels):
         linearization_df.columns = ['CHANNEL', 'LOW [mV]', 'MID [mV]', 'HIGH [mV]']
     else:
         linearization_df.columns = ['CHANNEL', 'INPUT [mV]']
+
+    return linearization_df
+
+def __dummy_linearization_df(num_channels):
+    """ Create a dummy linearization dataframe with 1 mV per channel for SPT data without a linearization file. """
+
+    linearization_df = pd.DataFrame({'CHANNEL': np.arange(1, num_channels+1), 'INPUT [mV]': np.arange(1, num_channels+1)})
 
     return linearization_df
 
@@ -129,3 +168,47 @@ def translate_MAESTRO_file(input_MAESTRO:str, input_linearization:str, output_pa
                 f.write(f"{i+1};{MAESTRO_df.iloc[i].values[0]};{linearization_df.iloc[i]['INPUT [mV]']}\n")
             else:
                 f.write(f"{i+1};{MAESTRO_df.iloc[i].values[0]};{linearization_df.iloc[i][info_dict['GAIN'] + ' [mV]']}\n")
+
+def translate_SPT_data(input_SPT:str, output_path:str, name:str, info_dict:dict):
+
+    """ SPT pickled data into an APFELmuS MCA file for further use with the MicroDosimetry package. """
+
+    input_SPT = os.path.normpath(input_SPT)
+    output_path = os.path.normpath(output_path)
+
+    # Read in pickled SPT data
+    data_df, header_dict = _read_pickled_spt_file(input_SPT, NUM_CHANNELS=info_dict['NUM_CHANNELS'])
+    # TODO: There will be linearization (multiple gains in the future)
+    linearization_df = __dummy_linearization_df(info_dict['NUM_CHANNELS'])
+
+    #Check if output path exists
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    # Remove folder from name
+    name = name.split('\\')[-1]
+    if name.split('.')[-1] == 'pkl':
+        name = name.split('.pkl')[0]
+    print(name)
+
+    #Write an MCA file (csv, sep=';')
+    with open(f'{output_path}/{name}.MCA', 'w') as f:
+
+        #MCA file header
+        l1 = f"DATE;{datetime.strftime(header_dict['DATE'], '%m/%d/%y %H:%M:%S')}\n"
+        l2 = f"NUM_CHANNELS;{header_dict['NUM_CHANNELS']}\n"
+        l3 = f"DETECTOR;{info_dict['DETECTOR']}\n"
+        l4 = f"GAIN;{info_dict['GAIN']}\n"
+        l5 = f"PARTICLE;{info_dict['PARTICLE']}\n"
+        l6 = f"LIVE_TIME;{header_dict['LIVE_TIME']}\n"
+        l7 = f"REAL_TIME;{header_dict['REAL_TIME']}\n"
+        l8 = "\n"
+
+        l9 = "CHANNEL;COUNTS;mV\n"
+
+        f.writelines([l1, l2, l3, l4, l5,l6, l7, l8, l9])
+
+        # TODO: Extend this to multiple gains in the future
+        #Write the data
+        for i in range(info_dict['NUM_CHANNELS']-1):
+            f.write(f"{i+1};{data_df.iloc[i].values[0]};{linearization_df.iloc[i]['INPUT [mV]']}\n")

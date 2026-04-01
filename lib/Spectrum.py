@@ -442,7 +442,7 @@ def normalize_log_spectrum(measurement):
     """
 
     if measurement.x_axis != 'LINEAL ENERGY' or measurement.y_axis not in ['yf(y)', 'yd(y)']:
-        raise ValueError('This manipulation only works for weighted probability density functions [y, yf(y)] or [y, yd(y)]')
+        raise ValueError('This manipulation only works for weighted probability density functions [y, yf(y)] or [y, yd(y)]; f(y) and d(y) are by default normalized')
     
     x = measurement.data[measurement.x_axis].to_numpy()
     w_pdf = measurement.data[measurement.y_axis].to_numpy()
