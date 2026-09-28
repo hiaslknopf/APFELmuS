@@ -40,12 +40,13 @@ def _read_MAESTRO_file(filepath):
 
     return data_df, header_dict, num_channels
 
-def _read_pickled_spt_file(file, NUM_CHANNELS=16384):
+def _read_pickled_spt_file(file, NUM_CHANNELS=16384, JUST_HEIGHTS=False, max_adc_value=16384):
     """ Get pulse heights from SPT analysis (pickle file)
     
         Args:
             file: Path to the pickled SPT data
             NUM_CHANNELS: Number of channels to resample the SPT data to (default: 16384)
+            max_adc_value: Maximum channel number to consider (default: 16384)
             
         Returns:
             data_df: Pandas dataframe containing spectrum information
@@ -60,9 +61,15 @@ def _read_pickled_spt_file(file, NUM_CHANNELS=16384):
     header_dict = {'DATE': date, 'NUM_CHANNELS': num_channels,
                     'LIVE_TIME': live_time, 'REAL_TIME': real_time}
 
-    _, pulse_heights = pickle.load(open(file, 'rb')).values()
-    print(f'Got pulse heights from {file} with {len(pulse_heights)} entries: {pulse_heights[:10]} ...')
-    x_axis = np.linspace(np.min(pulse_heights), np.max(pulse_heights), NUM_CHANNELS)
+    if JUST_HEIGHTS:
+        pulse_heights = pickle.load(open(file, 'rb'))["pulse_heights"]
+    else:
+        _, pulse_heights = pickle.load(open(file, 'rb')).values()
+
+    MIN = 0.01
+    MAX = max_adc_value
+
+    x_axis = np.linspace(MIN, MAX, NUM_CHANNELS)
     hist_data, bins = np.histogram(pulse_heights, bins=x_axis)
     bins = bins[:-1]
 
@@ -169,7 +176,7 @@ def translate_MAESTRO_file(input_MAESTRO:str, input_linearization:str, output_pa
             else:
                 f.write(f"{i+1};{MAESTRO_df.iloc[i].values[0]};{linearization_df.iloc[i][info_dict['GAIN'] + ' [mV]']}\n")
 
-def translate_SPT_data(input_SPT:str, output_path:str, name:str, info_dict:dict):
+def translate_SPT_data(input_SPT:str, output_path:str, name:str, info_dict:dict, JUST_HEIGHTS=False, max_adc_value=16384):
 
     """ SPT pickled data into an APFELmuS MCA file for further use with the MicroDosimetry package. """
 
@@ -177,7 +184,7 @@ def translate_SPT_data(input_SPT:str, output_path:str, name:str, info_dict:dict)
     output_path = os.path.normpath(output_path)
 
     # Read in pickled SPT data
-    data_df, header_dict = _read_pickled_spt_file(input_SPT, NUM_CHANNELS=info_dict['NUM_CHANNELS'])
+    data_df, header_dict = _read_pickled_spt_file(input_SPT, NUM_CHANNELS=info_dict['NUM_CHANNELS'], JUST_HEIGHTS=JUST_HEIGHTS, max_adc_value=max_adc_value)
     # TODO: There will be linearization (multiple gains in the future)
     linearization_df = __dummy_linearization_df(info_dict['NUM_CHANNELS'])
 

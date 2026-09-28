@@ -11,12 +11,16 @@ from lib import Calibrate
 
 #----------------------------------------------------
 
+THICKNESS = 12 # um
+MATERIAL = 'sic'
+PARTICLE = 'proton'
+
 #The calibration functions can be used without any measurement
-mean, max, _ =Calibrate.get_chord_length('None', 'slab', 10, False)
+mean, max, _ =Calibrate.get_chord_length('None', 'slab', THICKNESS, False)
 print(f'mean chord length: {mean} um')
 print(f'max chord length: {max} um\n')
 
-ymax, Lmax, _ = Calibrate.get_stopping_power('None', mean, 'ICRU', 0.01, 'carbon', 'diamond', plot=True)
+ymax, Lmax, _ = Calibrate.get_stopping_power('None', mean, 'SRIM', 0.01, PARTICLE, MATERIAL, plot=True)
 
 print(f'ymax: {ymax} keV/um')
 #----------------------------------------------------
